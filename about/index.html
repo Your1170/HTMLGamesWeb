@@ -1,0 +1,189 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131c">
+
+  <!-- 検索エンジンに登録しないようにする -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <title>TEAM_1170について</title>
+  <meta name="description" content="TEAM_1170についての紹介ページです。">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E %3Cdefs%3E %3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E %3Cstop offset='0%25' stop-color='%237c9cff'/%3E %3Cstop offset='100%25' stop-color='%23b18aff'/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width='64' height='64' rx='19' fill='url(%23bg)'/%3E %3Ctext x='32' y='45' text-anchor='middle' font-family='Arial, sans-serif' font-size='43' font-weight='900' fill='%2310131c'%3ET%3C/text%3E %3C/svg%3E">
+  <link rel="stylesheet" href="./style.css">
+  <style>
+  /* 基本設定・カラー変数 */
+  :root { color-scheme: dark; --bg: #10131c; --panel: #171c28; --panel-2: #1d2432; --line: rgba(255,255,255,.09); --text: #f3f5fb; --muted: #9aa4b6; --accent: #7c9cff; --accent-2: #a78bfa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(ellipse at 15% 0%, rgba(93,119,220,.18), transparent 34rem), radial-gradient(ellipse at 95% 15%, rgba(167,139,250,.12), transparent 30rem), var(--bg); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  a { color: inherit; text-decoration: none; }
+
+  /* 全体レイアウト */
+  .page-shell { min-height: 100vh; display: flex; flex-direction: column; }
+  .content { width: min(760px, calc(100% - 48px)); margin: 0 auto; padding: 76px 0 90px; flex: 1; }
+  footer { padding: 22px 24px 30px; border-top: 1px solid var(--line); color: #778196; text-align: center; font-size: 11px; letter-spacing: .04em; }
+
+  /* ヘッダー */
+  .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 0 max(32px, calc((100% - 1120px) / 2)); border-bottom: 1px solid var(--line); background: rgba(16,19,28,.55); }
+  .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .11em; }
+  .brand-mark { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #10131c; font-size: 19px; box-shadow: 0 8px 28px rgba(124,156,255,.22); }
+  .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .19em; }
+  .header-note { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+
+  /* ページタイトル */
+  .eyebrow { color: #aebeff; font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+  h1 { margin: 14px 0 22px; font-size: clamp(32px, 6vw, 48px); line-height: 1.2; letter-spacing: -.045em; }
+  .intro { margin: 0; color: var(--muted); font-size: 15px; line-height: 2; }
+  .intro strong { color: var(--text); }
+
+  /* 各セクション */
+  .about-section { margin-top: 36px; padding: 26px 28px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(29,36,50,.96), rgba(22,27,39,.96)); }
+  .about-section h2 { margin: 0 0 18px; font-size: 17px; letter-spacing: -.02em; }
+  .about-section p { margin: 10px 0 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+
+  /* 連絡先 */
+  .contact-list { display: grid; gap: 12px; }
+  .contact-item { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,.025); }
+  .contact-label { color: var(--muted); font-size: 12px; font-weight: 700; }
+  .contact-value { color: #aebeff; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+  a.contact-value:hover { color: var(--accent-2); text-decoration: underline; }
+
+  /* aboutセクションリンク */
+  .about-section a { color: #aebeff; text-decoration: underline; text-underline-offset: 3px; }
+  .about-section a:hover { color: #d0d9ff; }
+
+  /* ホームへ戻るリンク */
+  .back-link { display: inline-flex; align-items: center; gap: 10px; margin-top: 36px; padding: 12px 18px; border: 1px solid rgba(124,156,255,.25); border-radius: 12px; background: rgba(124,156,255,.1); color: #c7d2fe; font-size: 13px; font-weight: 700; transition: background .2s, transform .2s; }
+  .back-link:hover { transform: translateY(-2px); background: rgba(124,156,255,.18); }
+
+  /* キーボード操作時のフォーカス */
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+  /* スマートフォン向け */
+  @media (max-width: 600px) {
+    .topbar { min-height: 64px; padding: 0 16px; }
+    .brand-mark { width: 34px; height: 34px; border-radius: 10px; font-size: 17px; }
+    .header-note { display: none; }
+    .content { width: calc(100% - 32px); padding: 48px 0 64px; }
+    .about-section { margin-top: 24px; padding: 22px 18px; }
+    .contact-item { align-items: flex-start; flex-direction: column; gap: 6px; }
+  }
+
+  /* アニメーション軽減設定 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+
+    <header class="topbar">
+      <a class="brand" href="../index.html" aria-label="TEAM_1170 ホーム">
+        <span class="brand-mark">T</span>
+        <span>
+          TEAM_1170
+          <small>MINI GAME COLLECTION</small>
+        </span>
+      </a>
+
+      <span class="header-note">A LITTLE PLACE TO PLAY.</span>
+    </header>
+
+    <main class="content">
+
+      <div class="eyebrow">ABOUT TEAM_1170</div>
+
+      <h1>TEAM_1170について</h1>
+
+      <p class="intro">
+        TEAM_1170は、スマホゲーム
+        <strong>『７人の賢者と錬金術師』</strong>
+        の第1170部隊の仲間内で制作したゲーム置き場です。
+      </p>
+
+      <section class="about-section">
+        <h2>🎮 このサイトについて</h2>
+
+        <p>
+          仲間内で楽しむことを目的として、
+          気軽に遊べるミニゲームを掲載しています。
+        </p>
+
+        <p>
+          ちょっとした空き時間に、好きなゲームを楽しんでもらえたら嬉しいです。
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>📢 お知らせ・イベントについて</h2>
+
+        <p>
+          お知らせやイベントの内容には、
+          身内向けの情報が含まれています。
+        </p>
+
+        <p>
+          あらかじめご了承ください。
+        </p>
+      </section>
+
+      <section class="about-section">
+        <h2>🤝 TEAM_1170への参加について</h2>
+        <p>TEAM_1170では、一緒にゲームを楽しみながら、長く交流していける仲間を募集しています。</p>
+        <p>ゆるく、自分のペースで楽しみたい方や、ゲーム制作・ものづくりに興味がある方も大歓迎です。</p>
+        <p>参加を検討されている方は、募集要項や加入までの流れをご確認ください。</p>
+        <a href="./team_join.html">部隊員募集ページを見る →</a>
+      </section>
+
+      <section class="about-section">
+        <h2>✉️ 連絡先</h2>
+        <div class="contact-list">
+          <div class="contact-item">
+            <span class="contact-label">Discord</span>
+            <span class="contact-value">ryo1170</span>
+          </div>
+
+          <div class="contact-item">
+            <span class="contact-label">Instagram</span>
+            <a
+              class="contact-value"
+              href="https://www.instagram.com/ryo.himajinn/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @ryo.himajinn ↗
+            </a>
+          </div>
+
+          <div class="contact-item">
+            <span class="contact-label">X</span>
+            <a
+              class="contact-value"
+              href="https://x.com/RYO_himajinn"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              @RYO_himajinn ↗
+            </a>
+          </div>
+
+        </div>
+      </section>
+
+      <a class="back-link" href="../index.html">
+        <span>←</span>
+        TEAM_1170に戻る
+      </a>
+
+    </main>
+
+    <footer>
+      TEAM_1170 <span aria-hidden="true">·</span> A LITTLE PLACE TO PLAY.
+    </footer>
+
+  </div>
+</body>
+</html>

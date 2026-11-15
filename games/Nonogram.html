@@ -1,0 +1,1032 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NONOGRAM - TEAM_1170</title>
+<style>
+:root { --bg:#10131c; --panel:#171c28; --panel2:#1d2432; --line:rgba(255,255,255,.09); --text:#f3f5fb; --muted:#9aa4b6; --accent:#7c9cff; --accent2:#a78bfa; --good:#65d6a2; --bad:#ff7185; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; padding:24px 14px 50px; color:var(--text); background:linear-gradient(135deg,#10131c,#1b2435); font-family:sans-serif; }
+button,input,select { font:inherit; }
+button { cursor:pointer; }
+.container { width:100%; max-width:760px; margin:0 auto; }
+header { text-align:center; margin-bottom:24px; }
+header h1 { margin:0; font-size:30px; letter-spacing:3px; }
+header p { margin:8px 0 0; color:var(--muted); font-size:13px; }
+.panel { padding:20px; margin-bottom:16px; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
+h2 { margin:0 0 16px; font-size:18px; }
+h3 { margin:0 0 10px; font-size:15px; }
+.description { color:var(--muted); font-size:13px; line-height:1.8; }
+.field { margin:18px 0; }
+.field label { display:block; margin-bottom:8px; color:var(--muted); font-size:13px; }
+input,select { width:100%; padding:12px; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; outline:none; }
+input:focus,select:focus { border-color:var(--accent); }
+.primary-button,.sub-button,.mode-button { padding:11px 18px; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; font-weight:bold; transition:.15s; }
+.primary-button { width:100%; padding:14px; color:#10131c; background:var(--accent); border:none; }
+.primary-button:hover { filter:brightness(1.1); }
+.sub-button:hover,.mode-button:hover { border-color:var(--accent); }
+.reset-ranking-button { width:100%; margin-top:12px; color:var(--bad); }
+#startScreen { display:block; }
+#gameScreen { display:none; }
+.ranking-section { padding:14px 0; border-top:1px solid var(--line); }
+.ranking-section:first-of-type { padding-top:0; border-top:none; }
+.ranking-section h3 { display:flex; justify-content:space-between; align-items:center; }
+.ranking-size-label { color:var(--muted); font-size:12px; font-weight:normal; }
+.ranking-list { margin:0; padding:0; list-style:none; }
+.ranking-list li { display:flex; align-items:center; gap:10px; padding:10px 4px; border-bottom:1px solid var(--line); font-size:13px; }
+.ranking-list li:last-child { border-bottom:none; }
+.rank-number { flex:0 0 28px; color:var(--accent); font-weight:bold; }
+.rank-details { flex:1; min-width:0; display:flex; flex-direction:column; gap:4px; }
+.rank-date { overflow:hidden; color:var(--muted); font-size:11px; text-overflow:ellipsis; white-space:nowrap; }
+.rank-time { color:var(--good); font-size:14px; font-weight:bold; font-variant-numeric:tabular-nums; }
+.rank-lives { flex:0 0 auto; color:#ff8293; font-size:12px; white-space:nowrap; }
+.rank-hints { color:var(--accent); font-size:11px; }
+.empty-ranking { padding:14px 0; color:var(--muted); font-size:13px; text-align:center; }
+#gameInfo { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+.info-item { min-width:90px; padding:10px 14px; background:var(--panel); border:1px solid var(--line); border-radius:10px; text-align:center; }
+.info-label { display:block; margin-bottom:4px; color:var(--muted); font-size:11px; }
+.info-value { font-size:19px; font-weight:bold; font-variant-numeric:tabular-nums; }
+#lives { color:#ff8293; letter-spacing:2px; }
+#hintCount { color:var(--accent); }
+.mode-area { display:flex; justify-content:center; gap:10px; margin:16px 0; }
+.mode-button { min-width:120px; }
+.mode-button.active { color:#10131c; background:var(--accent); border-color:var(--accent); }
+.mode-button.active.x-mode { background:var(--accent2); border-color:var(--accent2); }
+.action-area { display:flex; justify-content:center; margin:14px 0; }
+#hintButton { min-width:180px; color:#10131c; background:var(--good); border:none; }
+#hintButton:disabled { opacity:.45; cursor:not-allowed; }
+#quitButton { min-width:180px; color:var(--muted); }
+.board-scroll { width:100%; overflow-x:auto; padding:8px 2px 14px; }
+.game-layout { --board-size:min(72vw,560px); display:grid; grid-template-columns:max-content var(--board-size); grid-template-rows:max-content var(--board-size); gap:0; width:max-content; max-width:100%; margin:0 auto; }
+.corner { grid-row:1; grid-column:1; }
+.col-clues { grid-row:1; grid-column:2; display:grid; grid-template-columns:repeat(var(--count),minmax(0,1fr)); align-items:end; width:var(--board-size); padding-bottom:5px; }
+.col-clue { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:2px; min-width:0; color:var(--muted); font-size:clamp(9px,2.4vw,13px); font-weight:bold; }
+.row-clues { grid-row:2; grid-column:1; display:grid; grid-template-rows:repeat(var(--count),minmax(0,1fr)); align-items:center; padding-right:8px; }
+.row-clue { display:flex; justify-content:flex-end; align-items:center; gap:5px; min-width:0; color:var(--muted); font-size:clamp(9px,2.4vw,13px); font-weight:bold; white-space:nowrap; }
+.clue-number.solved { color:#687386; opacity:.5; }
+.clue-number.tight { color:#a8e6bd; text-shadow:0 0 7px rgba(168,230,189,.2); }
+.clue-number.tight.solved { color:#687386; opacity:.5; text-shadow:none; }
+.board { grid-row:2; grid-column:2; display:grid; grid-template-columns:repeat(var(--count),minmax(0,1fr)); grid-template-rows:repeat(var(--count),minmax(0,1fr)); width:var(--board-size); aspect-ratio:1; overflow:hidden; border:2px solid #77839a; border-radius:3px; background:#e7ebf2; }
+.cell { display:flex; justify-content:center; align-items:center; min-width:0; min-height:0; padding:0; color:#172033; background:#e7ebf2; border:0; border-right:1px solid #aeb7c6; border-bottom:1px solid #aeb7c6; font-size:clamp(11px,2.6vw,20px); font-weight:bold; line-height:1; user-select:none; -webkit-tap-highlight-color:transparent; }
+.cell.filled { background:#526b9b; }
+.cell.marked { color:#8b5cf6; background:#dce1ec; }
+.cell.auto-marked { color:#8793a7; background:#dce4e9; cursor:not-allowed; }
+.cell.mistake { color:#dc3545; background:#ffe0e3; cursor:not-allowed; }
+.cell.hinted { background:#65d6a2; box-shadow:inset 0 0 0 2px #247b55; }
+.cell.thick-right { border-right:2px solid #59677e; }
+.cell.thick-bottom { border-bottom:2px solid #59677e; }
+.cell:active { filter:brightness(.85); }
+.cell.mistake:active,.cell.auto-marked:active { filter:none; }
+.game-help { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.7; text-align:center; }
+#message { min-height:22px; margin:10px 0; color:var(--muted); font-size:13px; text-align:center; }
+#endPanel { display:none; margin-top:18px; padding:18px; background:var(--panel2); border:1px solid var(--line); border-radius:12px; text-align:center; }
+#endTitle { margin:0 0 8px; font-size:23px; }
+#endDescription { margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.8; }
+.end-buttons { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+footer { margin-top:30px; color:var(--muted); font-size:11px; text-align:center; }
+@media (hover:hover) and (pointer:fine) { .mode-area { display:none; } }
+@media (max-width:480px) {
+body { padding:18px 10px 35px; }
+header h1 { font-size:25px; }
+.panel { padding:16px; }
+.info-item { min-width:76px; padding:8px 10px; }
+.info-value { font-size:16px; }
+.game-layout { --board-size:min(72vw,560px); }
+.row-clues { padding-right:5px; }
+.row-clue { gap:3px; }
+.mode-button { min-width:105px; padding:10px; }
+.ranking-list li { gap:7px; }
+.rank-number { flex-basis:25px; }
+.rank-lives { font-size:11px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+<header>
+<h1>NONOGRAM</h1>
+<p>数字のヒントを頼りにマスを埋めよう！</p>
+</header>
+
+<section id="startScreen">
+<div class="panel">
+<h2>ゲーム設定</h2>
+<p class="description">縦と横の数字をヒントに、正しいマスを塗りつぶしていくパズルゲームです。</p>
+<div class="field">
+<label for="boardSize">盤面サイズ</label>
+<select id="boardSize">
+<option value="5">5 × 5（初級）</option>
+<option value="10">10 × 10（中級）</option>
+<option value="15">15 × 15（上級）</option>
+</select>
+</div>
+<button id="startButton" class="primary-button">ゲームスタート</button>
+</div>
+
+<div class="panel">
+<h2>ランキング</h2>
+<div class="ranking-section">
+<h3>5×5部門 <span class="ranking-size-label">初級</span></h3>
+<ol id="rankingList5" class="ranking-list"></ol>
+<button class="sub-button reset-ranking-button" data-size="5">5×5ランキングをリセット</button>
+</div>
+<div class="ranking-section">
+<h3>10×10部門 <span class="ranking-size-label">中級</span></h3>
+<ol id="rankingList10" class="ranking-list"></ol>
+<button class="sub-button reset-ranking-button" data-size="10">10×10ランキングをリセット</button>
+</div>
+<div class="ranking-section">
+<h3>15×15部門 <span class="ranking-size-label">上級</span></h3>
+<ol id="rankingList15" class="ranking-list"></ol>
+<button class="sub-button reset-ranking-button" data-size="15">15×15ランキングをリセット</button>
+</div>
+</div>
+
+<div class="panel">
+<h2>遊び方</h2>
+<p class="description">
+・縦と横の数字は、その列・行に連続して並ぶ塗りつぶしマスの数です。<br>
+・PC：左クリックで塗りつぶし、右クリックで×。<br>
+・スマホ：画面上のボタンで「塗る」と「×」を切り替えます。<br>
+・ヒントボタンを押すと、正解のマスを1つ公開します。<br>
+・ヒントを使った回数はクリア時にランキングへ記録されます。<br>
+・完成した数字は個別にグレーアウトします。<br>
+・緑色の数字は、最大数ぴったりに収まるヒントです。<br>
+・正しく完成した行・列の残りの空白は自動で×になります。<br>
+・自動で付いた×は解除できません。<br>
+・間違ったマスを塗ると赤い×印が付き、ライフが1つ減ります。<br>
+・通常の×印を付けたマスは、解除するまで塗りつぶせません。<br>
+・ライフが0になるとゲーム失敗です。<br>
+・空白マスにすべて×を付ける必要はありません。
+</p>
+</div>
+</section>
+
+<section id="gameScreen">
+<div id="gameInfo">
+<div class="info-item"><span class="info-label">TIME</span><span id="timer" class="info-value">00:00.0</span></div>
+<div class="info-item"><span class="info-label">LIFE</span><span id="lives" class="info-value">♥ ♥ ♥ ♥ ♥</span></div>
+<div class="info-item"><span class="info-label">HINT</span><span id="hintCount" class="info-value">0</span></div>
+<div class="info-item"><span class="info-label">SIZE</span><span id="sizeLabel" class="info-value">5 × 5</span></div>
+</div>
+
+<div class="mode-area">
+<button id="fillMode" class="mode-button active">■ 塗る</button>
+<button id="xMode" class="mode-button x-mode">× 印を付ける</button>
+</div>
+
+<div class="action-area">
+<button id="hintButton" class="sub-button">💡 ヒントを使う</button>
+</div>
+
+<div class="action-area">
+<button id="quitButton" class="sub-button">タイトルに戻る</button>
+</div>
+
+<div class="board-scroll">
+<div class="game-layout" id="gameLayout">
+<div class="corner"></div>
+<div id="colClues" class="col-clues"></div>
+<div id="rowClues" class="row-clues"></div>
+<div id="board" class="board"></div>
+</div>
+</div>
+
+<div id="message">数字のヒントを確認してマスを埋めよう！</div>
+<p class="game-help">PC：左クリック＝塗る ／ 右クリック＝×　・　スマホ：上のボタンで操作を切り替え</p>
+
+<div id="endPanel">
+<h2 id="endTitle">CLEAR!</h2>
+<p id="endDescription"></p>
+<div class="end-buttons">
+<button id="retryButton" class="primary-button" style="width:auto;">同じ問題でもう一度</button>
+<button id="newButton" class="sub-button">新しい問題</button>
+<button id="titleButton" class="sub-button">タイトルへ戻る</button>
+</div>
+</div>
+</section>
+<footer>TEAM_1170 NONOGRAM</footer>
+</div>
+
+<script src="../common/home-button.js" defer></script>
+<script>
+const $ = id => document.getElementById(id);
+
+let size = 5;
+let solution = [];
+let rowClues = [];
+let colClues = [];
+let cells = [];
+let hintedCells = [];
+let lives = 5;
+let hintCount = 0;
+let mode = "fill";
+let startedAt = 0;
+let elapsed = 0;
+let timerInterval = null;
+let gameActive = false;
+
+const RANKING_PREFIX = "team1170_nonogram_ranking_v1_";
+const patternCache = new Map();
+
+function getClues(line) {
+  const result = [];
+  let count = 0;
+
+  for (const filled of line) {
+    if (filled) count++;
+    else if (count > 0) {
+      result.push(count);
+      count = 0;
+    }
+  }
+
+  if (count > 0) result.push(count);
+  return result.length ? result : [0];
+}
+
+function getAllClues(grid) {
+  return {
+    rows:grid.map(row => getClues(row)),
+    cols:Array.from({length:grid.length},(_,x) => getClues(grid.map(row => row[x])))
+  };
+}
+
+function makePatterns(n, clues) {
+  const key = `${n}:${clues.join(",")}`;
+  if (patternCache.has(key)) return patternCache.get(key);
+
+  if (clues.length === 1 && clues[0] === 0) {
+    const empty = [Array(n).fill(false)];
+    patternCache.set(key,empty);
+    return empty;
+  }
+
+  const patterns = [];
+  const totalRuns = clues.length;
+
+  function place(runIndex,start,pattern) {
+    if (runIndex === totalRuns) {
+      patterns.push(pattern.slice());
+      return;
+    }
+
+    const remaining = clues.slice(runIndex).reduce((a,b) => a+b,0);
+    const gaps = totalRuns-runIndex-1;
+    const lastStart = n-remaining-gaps;
+
+    for (let pos=start;pos<=lastStart;pos++) {
+      const next = pattern.slice();
+      for (let i=0;i<clues[runIndex];i++) next[pos+i] = true;
+      place(runIndex+1,pos+clues[runIndex]+1,next);
+    }
+  }
+
+  place(0,0,Array(n).fill(false));
+  patternCache.set(key,patterns);
+  return patterns;
+}
+
+function filterPatterns(patterns,line) {
+  return patterns.filter(pattern => {
+    for (let i=0;i<line.length;i++) {
+      if (line[i] === 1 && !pattern[i]) return false;
+      if (line[i] === 0 && pattern[i]) return false;
+    }
+    return true;
+  });
+}
+
+function evaluateLogic(n,rows,cols) {
+  const state = Array.from({length:n},() => Array(n).fill(-1));
+  const rowDomains = rows.map(clue => makePatterns(n,clue));
+  const colDomains = cols.map(clue => makePatterns(n,clue));
+
+  let changed = true;
+  let safety = 0;
+  let rounds = 0;
+  let initialForced = 0;
+
+  while (changed && safety < n*n+10) {
+    changed = false;
+    safety++;
+    let newCells = 0;
+
+    for (let y=0;y<n;y++) {
+      const possible = filterPatterns(rowDomains[y],state[y]);
+      if (!possible.length) return {solvable:false};
+      rowDomains[y] = possible;
+
+      for (let x=0;x<n;x++) {
+        const value = possible[0][x] ? 1 : 0;
+        if (possible.every(p => (p[x] ? 1 : 0) === value) && state[y][x] === -1) {
+          state[y][x] = value;
+          changed = true;
+          newCells++;
+        }
+      }
+    }
+
+    for (let x=0;x<n;x++) {
+      const line = state.map(row => row[x]);
+      const possible = filterPatterns(colDomains[x],line);
+      if (!possible.length) return {solvable:false};
+      colDomains[x] = possible;
+
+      for (let y=0;y<n;y++) {
+        const value = possible[0][y] ? 1 : 0;
+        if (possible.every(p => (p[y] ? 1 : 0) === value) && state[y][x] === -1) {
+          state[y][x] = value;
+          changed = true;
+          newCells++;
+        }
+      }
+    }
+
+    if (rounds === 0) initialForced = newCells;
+    rounds++;
+  }
+
+  const solved = state.every(row => row.every(value => value !== -1));
+  return {solvable:solved,initialForced,rounds};
+}
+
+function isTightLine(clue,n) {
+  if (clue.length === 1 && clue[0] === 0) return false;
+  const filled = clue.reduce((a,b) => a+b,0);
+  const requiredGaps = clue.length-1;
+  return filled+requiredGaps === n;
+}
+
+function isValidLine(line,n) {
+  const filledCount = line.filter(Boolean).length;
+  const clues = getClues(line);
+  if (filledCount < 2 || filledCount >= n) return false;
+  if (!clues.some(value => value >= 2)) return false;
+  return true;
+}
+
+function countTightLines(rows,cols,n) {
+  return rows.filter(c => isTightLine(c,n)).length +
+         cols.filter(c => isTightLine(c,n)).length;
+}
+
+// 最大数ぴったりの行・列をConsoleに出力するデバッグ機能
+function debugTightLines(rows,cols,n) {
+  const tightRows = rows
+    .map((clue,index) => ({index:index+1,clue}))
+    .filter(item => isTightLine(item.clue,n));
+
+  const tightCols = cols
+    .map((clue,index) => ({index:index+1,clue}))
+    .filter(item => isTightLine(item.clue,n));
+
+  console.groupCollapsed(
+    `[NONOGRAM DEBUG] ${n}×${n} / 最大数ぴったり: ${tightRows.length+tightCols.length}箇所`
+  );
+
+  console.log("行:",tightRows.length,"箇所");
+  tightRows.forEach(item => {
+    console.log(`${item.index}行目: [${item.clue.join(", ")}]`);
+  });
+
+  console.log("列:",tightCols.length,"箇所");
+  tightCols.forEach(item => {
+    console.log(`${item.index}列目: [${item.clue.join(", ")}]`);
+  });
+
+  if (n!==5 && tightRows.length+tightCols.length===0) {
+    console.warn("最大数ぴったりの行・列がありません！");
+  }
+
+  console.groupEnd();
+}
+
+function makeGrid(n) {
+  const maxAttempts = n === 5 ? 2500 : n === 10 ? 4500 : 6000;
+  let bestGrid = null;
+  let bestScore = -Infinity;
+
+  const minTight = n === 5 ? 0 : 1;
+  const minInitial = n === 5 ? 1 : n === 10 ? 3 : 5;
+  const maxInitial = n === 5 ? 12 : n === 10 ? 35 : 65;
+
+  for (let attempt=0;attempt<maxAttempts;attempt++) {
+    const grid = Array.from({length:n},() =>
+      Array.from({length:n},() => Math.random()<0.48)
+    );
+
+    const cols = Array.from({length:n},(_,x) => grid.map(row => row[x]));
+
+    if (!grid.every(line => isValidLine(line,n))) continue;
+    if (!cols.every(line => isValidLine(line,n))) continue;
+
+    const clues = getAllClues(grid);
+    const tightCount = countTightLines(clues.rows,clues.cols,n);
+
+    if (tightCount < minTight) continue;
+
+    const logic = evaluateLogic(n,clues.rows,clues.cols);
+    if (!logic.solvable) continue;
+
+    if (logic.initialForced > maxInitial) continue;
+    if (logic.initialForced < minInitial) continue;
+
+    const targetInitial = n === 5 ? 4 : n === 10 ? 12 : 22;
+    const score =
+      tightCount*12 +
+      Math.min(logic.rounds,10)*2 -
+      Math.abs(logic.initialForced-targetInitial)*1.5;
+
+    if (score > bestScore) {
+      bestScore = score;
+      bestGrid = grid;
+    }
+
+    if (attempt > 80 && Math.random() < 0.08) return grid;
+  }
+
+  if (bestGrid) return bestGrid;
+
+  // 条件を満たす問題が見つからない場合も、最大数ぴったりの行を含める
+  for (let attempt=0;attempt<3000;attempt++) {
+    const grid = Array.from({length:n},() =>
+      Array.from({length:n},() => Math.random()<0.48)
+    );
+
+    const cols = Array.from({length:n},(_,x) => grid.map(row => row[x]));
+    if (!grid.every(line => isValidLine(line,n))) continue;
+    if (!cols.every(line => isValidLine(line,n))) continue;
+
+    const clues = getAllClues(grid);
+    if (n !== 5 && countTightLines(clues.rows,clues.cols,n) < 1) continue;
+    if (evaluateLogic(n,clues.rows,clues.cols).solvable) return grid;
+  }
+
+  // 最終フォールバック：必ず最大数ぴったりの行を含める
+  const firstRun = Math.floor(n/2);
+  const secondRun = n-firstRun-1;
+  const tightPattern = [
+    ...Array(firstRun).fill(true),
+    false,
+    ...Array(secondRun).fill(true)
+  ];
+
+  return Array.from({length:n},() => tightPattern.slice());
+}
+
+function getCurrentLine(isRow,index) {
+  return isRow ? cells[index].slice() : cells.map(row => row[index]);
+}
+
+function getCurrentRuns(line) {
+  const result = [];
+  let count = 0;
+
+  for (const value of line) {
+    if (value === 1) count++;
+    else if (count>0) {
+      result.push(count);
+      count = 0;
+    }
+  }
+
+  if (count>0) result.push(count);
+  return result.length ? result : [0];
+}
+
+function arraysEqual(a,b) {
+  return a.length===b.length && a.every((v,i)=>v===b[i]);
+}
+
+function lineIsSolved(line,clues) {
+  return arraysEqual(getCurrentRuns(line),clues);
+}
+
+// 正解盤面の塊と照合して、完成した数字だけをグレーアウトする
+function getSolvedRunIndexes(isRow,index,clues) {
+  const solved = new Set();
+
+  const targetLine = isRow
+    ? solution[index]
+    : solution.map(row => row[index]);
+
+  const currentLine = isRow
+    ? cells[index]
+    : cells.map(row => row[index]);
+
+  let clueIndex = 0;
+  let position = 0;
+
+  while (position<size && clueIndex<clues.length) {
+    if (!targetLine[position]) {
+      position++;
+      continue;
+    }
+
+    const start = position;
+
+    while (position<size && targetLine[position]) {
+      position++;
+    }
+
+    const end = position-1;
+    let completed = true;
+
+    for (let i=start;i<=end;i++) {
+      if (currentLine[i]!==1) {
+        completed = false;
+        break;
+      }
+    }
+
+    if (completed) solved.add(clueIndex);
+    clueIndex++;
+  }
+
+  return solved;
+}
+
+function formatTime(ms) {
+  const totalTenths = Math.floor(ms/100);
+  const minutes = Math.floor(totalTenths/600);
+  const seconds = Math.floor((totalTenths%600)/10);
+  const tenths = totalTenths%10;
+
+  return String(minutes).padStart(2,"0")+":"+
+    String(seconds).padStart(2,"0")+"."+tenths;
+}
+
+function updateTimer() {
+  elapsed = Date.now()-startedAt;
+  $("timer").textContent = formatTime(elapsed);
+}
+
+function startTimer() {
+  stopTimer();
+  startedAt = Date.now();
+  elapsed = 0;
+  $("timer").textContent = "00:00.0";
+  timerInterval = setInterval(updateTimer,100);
+}
+
+function stopTimer() {
+  if (timerInterval!==null) {
+    clearInterval(timerInterval);
+    timerInterval = null;
+  }
+}
+
+function updateLives() {
+  $("lives").textContent = Array.from({length:5},(_,i)=>i<lives?"♥":"♡").join(" ");
+}
+
+function updateHintCount() {
+  $("hintCount").textContent = hintCount;
+}
+
+function setMode(nextMode) {
+  mode = nextMode;
+  $("fillMode").classList.toggle("active",mode==="fill");
+  $("xMode").classList.toggle("active",mode==="x");
+}
+
+function renderClueNumber(container,value,index,clues,n) {
+  const span = document.createElement("span");
+  span.className = "clue-number";
+  span.textContent = value;
+
+  // 最大数ぴったりの数字をパステルグリーンで強調
+  if (isTightLine(clues,n)) {
+    span.classList.add("tight");
+  }
+
+  container.appendChild(span);
+}
+
+function renderBoard() {
+  const board = $("board");
+  const rowArea = $("rowClues");
+  const colArea = $("colClues");
+
+  board.innerHTML = "";
+  rowArea.innerHTML = "";
+  colArea.innerHTML = "";
+
+  $("gameLayout").style.setProperty("--count",size);
+
+  for (let y=0;y<size;y++) {
+    const clue = document.createElement("div");
+    clue.className = "row-clue";
+
+    rowClues[y].forEach((value,index) =>
+      renderClueNumber(clue,value,index,rowClues[y],size)
+    );
+
+    rowArea.appendChild(clue);
+  }
+
+  for (let x=0;x<size;x++) {
+    const clue = document.createElement("div");
+    clue.className = "col-clue";
+
+    colClues[x].forEach((value,index) =>
+      renderClueNumber(clue,value,index,colClues[x],size)
+    );
+
+    colArea.appendChild(clue);
+  }
+
+  for (let y=0;y<size;y++) {
+    for (let x=0;x<size;x++) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "cell";
+      button.dataset.x = x;
+      button.dataset.y = y;
+      button.setAttribute("aria-label",`${y+1}行 ${x+1}列`);
+
+      if ((x+1)%5===0 && x!==size-1) button.classList.add("thick-right");
+      if ((y+1)%5===0 && y!==size-1) button.classList.add("thick-bottom");
+
+      board.appendChild(button);
+    }
+  }
+
+  updateBoardDisplay();
+}
+
+function autoMarkCompletedLines() {
+  let changed = true;
+
+  while (changed) {
+    changed = false;
+
+    for (let y=0;y<size;y++) {
+      if (!lineIsSolved(getCurrentLine(true,y),rowClues[y])) continue;
+
+      for (let x=0;x<size;x++) {
+        if (cells[y][x]===0) {
+          cells[y][x] = 4;
+          changed = true;
+        }
+      }
+    }
+
+    for (let x=0;x<size;x++) {
+      if (!lineIsSolved(getCurrentLine(false,x),colClues[x])) continue;
+
+      for (let y=0;y<size;y++) {
+        if (cells[y][x]===0) {
+          cells[y][x] = 4;
+          changed = true;
+        }
+      }
+    }
+  }
+}
+
+function updateBoardDisplay() {
+  autoMarkCompletedLines();
+  const buttons = $("board").children;
+
+  for (let y=0;y<size;y++) {
+    for (let x=0;x<size;x++) {
+      const button = buttons[y*size+x];
+      const value = cells[y][x];
+
+      button.classList.toggle("filled",value===1);
+      button.classList.toggle("marked",value===2);
+      button.classList.toggle("mistake",value===3);
+      button.classList.toggle("auto-marked",value===4);
+      button.classList.toggle("hinted",hintedCells[y][x]);
+      button.textContent = value===2 || value===3 || value===4 ? "×" : "";
+    }
+  }
+
+  updateClueDisplay();
+}
+
+function updateClueDisplay() {
+  const rowElements = $("rowClues").children;
+  const colElements = $("colClues").children;
+
+  for (let y=0;y<size;y++) {
+    const solved = getSolvedRunIndexes(true,y,rowClues[y]);
+    const numbers = rowElements[y].children;
+
+    for (let i=0;i<numbers.length;i++) {
+      numbers[i].classList.toggle("solved",solved.has(i));
+    }
+  }
+
+  for (let x=0;x<size;x++) {
+    const solved = getSolvedRunIndexes(false,x,colClues[x]);
+    const numbers = colElements[x].children;
+
+    for (let i=0;i<numbers.length;i++) {
+      numbers[i].classList.toggle("solved",solved.has(i));
+    }
+  }
+}
+
+function startGame(isNewPuzzle=true) {
+  size = Number($("boardSize").value);
+
+  if (isNewPuzzle) {
+    solution = makeGrid(size);
+    const clues = getAllClues(solution);
+    rowClues = clues.rows;
+    colClues = clues.cols;
+
+    // 問題生成時に最大数ぴったりの行・列をConsoleへ出力
+    debugTightLines(rowClues,colClues,size);
+  }
+
+  cells = Array.from({length:size},()=>Array(size).fill(0));
+  hintedCells = Array.from({length:size},()=>Array(size).fill(false));
+  lives = 5;
+  hintCount = 0;
+  gameActive = true;
+
+  $("sizeLabel").textContent = `${size} × ${size}`;
+  $("message").textContent = "数字のヒントを確認してマスを埋めよう！";
+  $("endPanel").style.display = "none";
+  $("startScreen").style.display = "none";
+  $("gameScreen").style.display = "block";
+  $("hintButton").disabled = false;
+
+  updateLives();
+  updateHintCount();
+  setMode("fill");
+  renderBoard();
+  startTimer();
+}
+
+function handleCellClick(x,y,action=mode) {
+  if (!gameActive) return;
+
+  const oldValue = cells[y][x];
+  if (oldValue===3 || oldValue===1 || oldValue===4) return;
+
+  if (oldValue===2 && action==="fill") {
+    $("message").textContent = "×印を解除してから塗りつぶしてください。";
+    return;
+  }
+
+  if (action==="x") {
+    cells[y][x] = oldValue===2 ? 0 : 2;
+    $("message").textContent = "";
+    updateBoardDisplay();
+    return;
+  }
+
+  if (solution[y][x]!==true) {
+    cells[y][x] = 3;
+    lives--;
+    updateLives();
+    $("message").textContent = "そこは間違い！ ライフが1つ減ったよ。";
+    updateBoardDisplay();
+
+    if (lives<=0) finishGame(false);
+    return;
+  }
+
+  cells[y][x] = 1;
+  $("message").textContent = "";
+  updateBoardDisplay();
+
+  if (checkClear()) finishGame(true);
+}
+
+function useHint() {
+  if (!gameActive) return;
+
+  const candidates = [];
+
+  for (let y=0;y<size;y++) {
+    for (let x=0;x<size;x++) {
+      if (solution[y][x] && cells[y][x]!==1) {
+        candidates.push({x,y});
+      }
+    }
+  }
+
+  if (!candidates.length) {
+    $("message").textContent = "ヒントにできるマスはもうありません。";
+    $("hintButton").disabled = true;
+    return;
+  }
+
+  const target = candidates[Math.floor(Math.random()*candidates.length)];
+
+  cells[target.y][target.x] = 1;
+  hintedCells[target.y][target.x] = true;
+  hintCount++;
+
+  updateHintCount();
+
+  $("message").textContent =
+    `${target.y+1}行 ${target.x+1}列が正解！ ヒントを使用しました。`;
+
+  updateBoardDisplay();
+
+  if (checkClear()) finishGame(true);
+}
+
+function checkClear() {
+  for (let y=0;y<size;y++) {
+    if (!lineIsSolved(getCurrentLine(true,y),rowClues[y])) return false;
+  }
+
+  for (let x=0;x<size;x++) {
+    if (!lineIsSolved(getCurrentLine(false,x),colClues[x])) return false;
+  }
+
+  return true;
+}
+
+function finishGame(isClear) {
+  gameActive = false;
+  stopTimer();
+  $("hintButton").disabled = true;
+  $("endPanel").style.display = "block";
+
+  if (isClear) {
+    $("endTitle").textContent = "🎉 CLEAR!";
+    $("endTitle").style.color = "var(--good)";
+    $("endDescription").textContent =
+      `クリアおめでとう！ タイム：${formatTime(elapsed)} ／ 残りライフ：${lives} ／ ヒント使用：${hintCount}回`;
+
+    if (saveRanking(size,elapsed,lives,hintCount)) {
+      $("endDescription").textContent += " ／ ランキングに登録されたよ！";
+    }
+  } else {
+    $("endTitle").textContent = "GAME OVER";
+    $("endTitle").style.color = "var(--bad)";
+    $("endDescription").textContent =
+      `ライフが0になりました。ゲーム失敗！ ヒント使用：${hintCount}回。もう一度挑戦してみよう。`;
+  }
+
+  $("endPanel").scrollIntoView({behavior:"smooth",block:"nearest"});
+}
+
+function getRanking(n) {
+  try {
+    const data = JSON.parse(localStorage.getItem(RANKING_PREFIX+n)||"[]");
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+}
+
+function saveRanking(n,time,remainingLives,usedHints) {
+  const ranking = getRanking(n);
+  const entry = {time,date:Date.now(),lives:remainingLives,hints:usedHints};
+
+  ranking.push(entry);
+  ranking.sort((a,b)=>a.time-b.time);
+
+  const position = ranking.indexOf(entry);
+
+  try {
+    localStorage.setItem(RANKING_PREFIX+n,JSON.stringify(ranking.slice(0,10)));
+  } catch (error) {
+    console.warn("ランキングを保存できませんでした。",error);
+  }
+
+  return position>=0 && position<10;
+}
+
+function renderRanking(n) {
+  const list = $(`rankingList${n}`);
+  const ranking = getRanking(n);
+  list.innerHTML = "";
+
+  if (!ranking.length) {
+    const empty = document.createElement("li");
+    empty.className = "empty-ranking";
+    empty.textContent = "まだ記録がありません。最初のランカーを目指そう！";
+    list.appendChild(empty);
+    return;
+  }
+
+  ranking.forEach((item,index) => {
+    const li = document.createElement("li");
+
+    const number = document.createElement("span");
+    number.className = "rank-number";
+    number.textContent = `${index+1}位`;
+
+    const details = document.createElement("div");
+    details.className = "rank-details";
+
+    const date = document.createElement("span");
+    date.className = "rank-date";
+    date.textContent = item.date
+      ? new Date(item.date).toLocaleString("ja-JP")
+      : "記録日時不明";
+
+    const time = document.createElement("span");
+    time.className = "rank-time";
+    time.textContent = formatTime(item.time);
+
+    const hints = document.createElement("span");
+    hints.className = "rank-hints";
+    hints.textContent = Number.isInteger(item.hints)
+      ? `💡 ヒント ${item.hints}回`
+      : "💡 ヒント －回";
+
+    const livesLabel = document.createElement("span");
+    livesLabel.className = "rank-lives";
+    livesLabel.textContent = Number.isInteger(item.lives)
+      ? `♥ ${item.lives}/5`
+      : "♥ －/5";
+
+    details.append(date,time,hints);
+    li.append(number,details,livesLabel);
+    list.appendChild(li);
+  });
+}
+
+function renderAllRankings() {
+  [5,10,15].forEach(n=>renderRanking(n));
+}
+
+function resetRanking(n) {
+  if (!window.confirm(`${n}×${n}部門のランキングを削除します。よろしいですか？`)) return;
+
+  try {
+    localStorage.removeItem(RANKING_PREFIX+n);
+    renderRanking(n);
+    window.alert(`${n}×${n}部門のランキングをリセットしました。`);
+  } catch (error) {
+    window.alert("ランキングをリセットできませんでした。");
+  }
+}
+
+// タイトルへ戻る処理を共通化
+function returnToTitle() {
+  if (gameActive) {
+    if (!window.confirm("ゲームを終了してタイトルに戻りますか？")) {
+      return;
+    }
+  }
+
+  stopTimer();
+  gameActive = false;
+
+  $("gameScreen").style.display = "none";
+  $("startScreen").style.display = "block";
+
+  renderAllRankings();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+$("startButton").addEventListener("click",()=>startGame(true));
+$("fillMode").addEventListener("click",()=>setMode("fill"));
+$("xMode").addEventListener("click",()=>setMode("x"));
+$("hintButton").addEventListener("click",useHint);
+$("quitButton").addEventListener("click",returnToTitle);
+$("titleButton").addEventListener("click",returnToTitle);
+
+$("board").addEventListener("pointerdown",event => {
+  if (event.pointerType!=="mouse" || event.button!==0) return;
+
+  const button = event.target.closest(".cell");
+  if (!button) return;
+
+  event.preventDefault();
+  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),"fill");
+});
+
+$("board").addEventListener("contextmenu",event => {
+  const button = event.target.closest(".cell");
+  if (!button) return;
+
+  event.preventDefault();
+  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),"x");
+});
+
+$("board").addEventListener("click",event => {
+  if (event.pointerType==="mouse") return;
+
+  const button = event.target.closest(".cell");
+  if (!button) return;
+
+  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),mode);
+});
+
+$("retryButton").addEventListener("click",()=>startGame(false));
+$("newButton").addEventListener("click",()=>startGame(true));
+
+document.querySelectorAll(".reset-ranking-button").forEach(button => {
+  button.addEventListener("click",()=>resetRanking(Number(button.dataset.size)));
+});
+
+renderAllRankings();
+</script>
+</body>
+</html>

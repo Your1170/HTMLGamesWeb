@@ -1,0 +1,624 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Game</title>
+  <style>
+    /* 全体共通 */
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; padding: 24px 16px; color: #e2e8f0; background: linear-gradient(135deg, #172033, #26364d); font-family: sans-serif; }
+
+    /* ゲーム全体のレイアウト */
+    .container { width: 100%; max-width: 520px; margin: 0 auto; }
+    .panel { padding: 20px; border: 1px solid #40516a; border-radius: 16px; background: #26364d; box-shadow: 0 12px 32px #0003; }
+
+    /* タイトル・説明文 */
+    h1 { margin: 0 0 8px; text-align: center; font-size: 28px; }
+    .description { margin-bottom: 24px; color: #a8b7ca; text-align: center; font-size: 14px; }
+
+    /* スコア・タイマー */
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 16px; }
+    .stat { padding: 12px; border-radius: 10px; background: #19263a; text-align: center; }
+    .stat-label { display: block; margin-bottom: 4px; color: #a8b7ca; font-size: 12px; }
+    .stat-value { font-size: 24px; font-weight: bold; font-variant-numeric: tabular-nums; }
+
+    /* パズル盤面 */
+    #board { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: 100%; aspect-ratio: 1; padding: 10px; border-radius: 12px; background: #19263a; }
+
+    /* パズルブロック */
+    .tile { display: flex; align-items: center; justify-content: center; min-width: 0; padding: 0; border: none; border-radius: 8px; color: #365477; background-color: #b9d8f5; font-size: clamp(20px, 7vw, 32px); font-weight: bold; cursor: pointer; transition: background-color 0.15s, color 0.15s, transform 0.15s; touch-action: manipulation; }
+    .tile.correct { color: #286344; background-color: #b9ebce; }
+    .tile:active { transform: scale(0.94); }
+    .tile.empty { background: transparent; cursor: default; pointer-events: none; }
+
+    /* ゲーム操作ボタン */
+    .controls { display: flex; gap: 10px; margin-top: 16px; }
+    button.action { flex: 1; padding: 13px 10px; border: none; border-radius: 8px; color: #365477; background: #c5d9ee; font-size: 14px; font-weight: bold; cursor: pointer; }
+    button.action.primary { color: #ffffff; background: #729fc9; }
+    button.action:active { opacity: 0.8; }
+
+    /* ゲームメッセージ */
+    #message { min-height: 24px; margin-top: 16px; color: #b9ebce; text-align: center; font-weight: bold; }
+
+    /* ランキング */
+    .ranking-area { margin-top: 28px; }
+    .ranking-area h2 { margin: 0 0 16px; font-size: 20px; }
+    select { width: 100%; padding: 11px; border: 1px solid #52647d; border-radius: 8px; color: #e2e8f0; background: #19263a; font-size: 14px; }
+    .ranking-list { margin: 12px 0 0; padding: 0; list-style: none; }
+    .ranking-item { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 4px; border-bottom: 1px solid #40516a; font-size: 14px; }
+    .ranking-item:first-child { color: #f5d98b; }
+    .ranking-rank { display: inline-block; width: 34px; font-weight: bold; }
+    .ranking-score { font-weight: bold; font-variant-numeric: tabular-nums; }
+    .ranking-empty { padding: 20px 0; color: #a8b7ca; text-align: center; font-size: 13px; }
+    .ranking-reset { width: 100%; margin-top: 16px; color: #8b4b4b !important; background: #f3d5d5 !important; }
+    .ranking-reset:disabled { color: #a0aab8 !important; background: #dce2e9 !important; cursor: not-allowed; opacity: 0.6; }
+
+    /* 操作説明 */
+    .help { margin-top: 20px; color: #a8b7ca; text-align: center; font-size: 12px; line-height: 1.7; }
+
+    /* スマートフォン向け調整 */
+    @media (max-width: 400px) {
+      body { padding: 16px 10px; }
+      .panel { padding: 14px; }
+      #board { gap: 5px; padding: 7px; }
+      .tile { border-radius: 6px; }
+    }
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <h1>Slide Puzzle</h1>
+    <p class="description">
+      15個のブロックを正しい順番に並べよう！
+    </p>
+
+    <div class="panel">
+      <div class="stats">
+        <div class="stat">
+          <span class="stat-label">MOVES</span>
+          <span class="stat-value" id="moves">0</span>
+        </div>
+
+        <div class="stat">
+          <span class="stat-label">TIME</span>
+          <span class="stat-value" id="time">00:00</span>
+        </div>
+      </div>
+
+      <div
+        id="board"
+        role="group"
+        aria-label="4×4のパズル盤面">
+      </div>
+
+      <div class="controls">
+        <button
+          class="action primary"
+          id="shuffleButton"
+          type="button">
+          シャッフル
+        </button>
+
+        <button
+          class="action"
+          id="resetButton"
+          type="button">
+          リスタート
+        </button>
+      </div>
+
+      <div
+        id="message"
+        role="status"
+        aria-live="polite">
+      </div>
+
+      <div class="ranking-area">
+        <h2>🏆 ランキング</h2>
+
+        <label for="rankingType">
+          ランキング部門
+        </label>
+
+        <select id="rankingType">
+          <option value="moves">
+            最少MOVEランキング
+          </option>
+          <option value="time">
+            タイムアタックランキング
+          </option>
+        </select>
+
+        <ol
+          class="ranking-list"
+          id="rankingList">
+        </ol>
+
+        <button
+          class="action ranking-reset"
+          id="rankingResetButton"
+          type="button">
+          ランキングをリセット
+        </button>
+      </div>
+
+      <div class="help">
+        ブロックをタップして移動できます。<br>
+        PCでは矢印キーでも操作できます。<br>
+        緑色のブロックは正しい位置にあります。
+      </div>
+    </div>
+  </div>
+  <script src="../common/home-button.js" defer></script>
+  <script>
+  "use strict";
+
+  const SIZE = 4;
+  const TOTAL = SIZE * SIZE;
+  const RANKING_KEY = "slidePuzzleRankings";
+
+  // DOM
+  const boardElement = document.getElementById("board");
+  const movesElement = document.getElementById("moves");
+  const timeElement = document.getElementById("time");
+  const messageElement = document.getElementById("message");
+
+  const shuffleButton = document.getElementById("shuffleButton");
+  const resetButton = document.getElementById("resetButton");
+
+  const rankingTypeElement = document.getElementById("rankingType");
+  const rankingListElement = document.getElementById("rankingList");
+  const rankingResetButton = document.getElementById("rankingResetButton");
+
+  // ゲーム状態
+  let board = [];
+  let initialBoard = [];
+
+  let moves = 0;
+  let elapsedTime = 0;
+
+  let timerInterval = null;
+  let startTime = null;
+
+  let gameStarted = false;
+  let gameFinished = false;
+
+  // 完成状態
+  const solvedState = Array.from(
+  { length: TOTAL - 1 },
+  (_, index) => index + 1
+  ).concat(0);
+
+  // 時間表示
+  function formatTime(seconds) {
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+
+  return (
+  String(minutes).padStart(2, "0") +
+  ":" +
+  String(remainingSeconds).padStart(2, "0")
+  );
+  }
+
+  // ステータス更新
+  function updateStats() {
+  movesElement.textContent = moves;
+  timeElement.textContent = formatTime(elapsedTime);
+  }
+
+  // タイマー開始
+  function startTimer() {
+  if (gameStarted || gameFinished) return;
+
+  gameStarted = true;
+  startTime = Date.now();
+
+  timerInterval = setInterval(() => {
+  elapsedTime = Math.floor(
+  (Date.now() - startTime) / 1000
+  );
+
+  updateStats();
+  }, 250);
+  }
+
+  // タイマー停止
+  function stopTimer() {
+  if (timerInterval !== null) {
+  clearInterval(timerInterval);
+  timerInterval = null;
+  }
+  }
+
+  // 正しい位置か判定
+  function isCorrectPosition(value, index) {
+  return value !== 0 && value === index + 1;
+  }
+
+  // ボード描画
+  function renderBoard() {
+  boardElement.innerHTML = "";
+
+  board.forEach((value, index) => {
+  const tile = document.createElement("button");
+
+  tile.type = "button";
+  tile.classList.add("tile");
+
+  if (value === 0) {
+  tile.classList.add("empty");
+  tile.disabled = true;
+  tile.setAttribute("aria-label", "空白マス");
+  } else {
+  tile.textContent = value;
+  tile.setAttribute("aria-label", `数字 ${value}`);
+
+  // 正しい位置なら correct クラスを付ける
+  if (isCorrectPosition(value, index)) {
+    tile.classList.add("correct");
+  }
+
+  tile.addEventListener("click", () => {
+    moveTile(index);
+  });
+  }
+
+  boardElement.appendChild(tile);
+  });
+  }
+
+  // 空白マスの位置
+  function getEmptyIndex() {
+  return board.indexOf(0);
+  }
+
+  // 隣接判定
+  function isAdjacent(index1, index2) {
+  const row1 = Math.floor(index1 / SIZE);
+  const col1 = index1 % SIZE;
+
+  const row2 = Math.floor(index2 / SIZE);
+  const col2 = index2 % SIZE;
+
+  return (
+  Math.abs(row1 - row2) +
+  Math.abs(col1 - col2) === 1
+  );
+  }
+
+  // ブロック移動
+  function moveTile(index) {
+  if (gameFinished) return;
+
+  const emptyIndex = getEmptyIndex();
+
+  if (!isAdjacent(index, emptyIndex)) return;
+
+  // 最初の操作でタイマー開始
+  startTimer();
+
+  // ブロック入れ替え
+  [board[index], board[emptyIndex]] =
+  [board[emptyIndex], board[index]];
+
+  moves++;
+
+  updateStats();
+  renderBoard();
+
+  // クリア判定
+  if (checkClear()) {
+  finishGame();
+  }
+  }
+
+  // クリア判定
+  function checkClear() {
+  return board.every(
+  (value, index) => value === solvedState[index]
+  );
+  }
+
+  // ゲーム終了
+  function finishGame() {
+  gameFinished = true;
+
+  // 最終時間を正確に取得
+  elapsedTime = Math.floor(
+  (Date.now() - startTime) / 1000
+  );
+
+  stopTimer();
+  updateStats();
+
+  messageElement.textContent =
+  `クリア！ ${moves}回 / ${formatTime(elapsedTime)}`;
+
+  saveRanking();
+  renderRanking();
+  }
+
+  // ゲーム状態リセット
+  function resetGameStatus() {
+  stopTimer();
+
+  moves = 0;
+  elapsedTime = 0;
+  startTime = null;
+
+  gameStarted = false;
+  gameFinished = false;
+
+  messageElement.textContent = "";
+
+  updateStats();
+  renderBoard();
+  }
+
+  // シャッフル
+  function shuffleBoard() {
+  board = [...solvedState];
+
+  let previousEmptyIndex = -1;
+
+  // 合法手をランダムに繰り返す
+  // 完成状態から移動するため必ず解ける
+  for (let i = 0; i < 300; i++) {
+  const emptyIndex = getEmptyIndex();
+  const candidates = [];
+
+  for (let index = 0; index < TOTAL; index++) {
+  if (
+    isAdjacent(index, emptyIndex) &&
+    index !== previousEmptyIndex
+  ) {
+    candidates.push(index);
+  }
+  }
+
+  const selectedIndex =
+  candidates[Math.floor(Math.random() * candidates.length)];
+
+  [board[emptyIndex], board[selectedIndex]] =
+  [board[selectedIndex], board[emptyIndex]];
+
+  previousEmptyIndex = emptyIndex;
+  }
+
+  // 完成状態になってしまった場合は再シャッフル
+  if (checkClear()) {
+  shuffleBoard();
+  return;
+  }
+
+  // リスタート用に初期配置を保存
+  initialBoard = [...board];
+
+  resetGameStatus();
+
+  messageElement.textContent =
+  "ゲーム開始！数字を順番に並べよう。";
+  }
+
+  // リスタート
+  function restartGame() {
+  if (initialBoard.length === 0) {
+  shuffleBoard();
+  return;
+  }
+
+  board = [...initialBoard];
+
+  resetGameStatus();
+
+  messageElement.textContent =
+  "もう一度チャレンジしよう！";
+  }
+
+  // ランキング取得
+  function getRankings() {
+  try {
+  const saved = localStorage.getItem(RANKING_KEY);
+
+  if (!saved) {
+  return {
+    moves: [],
+    time: []
+  };
+  }
+
+  const rankings = JSON.parse(saved);
+
+  return {
+  moves: Array.isArray(rankings.moves)
+    ? rankings.moves
+    : [],
+  time: Array.isArray(rankings.time)
+    ? rankings.time
+    : []
+  };
+  } catch (error) {
+  console.error(
+  "ランキングの読み込みに失敗しました",
+  error
+  );
+
+  return {
+  moves: [],
+  time: []
+  };
+  }
+  }
+
+  // ランキング保存
+  function saveRanking() {
+  const rankings = getRankings();
+
+  const record = {
+  moves: moves,
+  time: elapsedTime,
+  date: new Date().toISOString()
+  };
+
+  // 最少MOVE部門
+  rankings.moves.push(record);
+
+  rankings.moves.sort((a, b) => {
+  return a.moves - b.moves || a.time - b.time;
+  });
+
+  rankings.moves = rankings.moves.slice(0, 10);
+
+  // タイムアタック部門
+  rankings.time.push(record);
+
+  rankings.time.sort((a, b) => {
+  return a.time - b.time || a.moves - b.moves;
+  });
+
+  rankings.time = rankings.time.slice(0, 10);
+
+  try {
+  localStorage.setItem(
+  RANKING_KEY,
+  JSON.stringify(rankings)
+  );
+  } catch (error) {
+  console.error(
+  "ランキングの保存に失敗しました",
+  error
+  );
+
+  messageElement.textContent +=
+  "（ランキングを保存できませんでした）";
+  }
+  }
+
+  // ランキング描画
+  function renderRanking() {
+    const rankings = getRankings();
+    const type = rankingTypeElement.value;
+    const ranking = rankings[type];
+
+    rankingListElement.innerHTML = "";
+
+    // 両部門とも記録がない場合はリセット不可
+    const hasRanking =
+      rankings.moves.length > 0 ||
+      rankings.time.length > 0;
+
+    rankingResetButton.disabled = !hasRanking;
+
+    if (ranking.length === 0) {
+      const empty = document.createElement("li");
+
+      empty.className = "ranking-empty";
+      empty.textContent = "まだ記録がありません";
+
+      rankingListElement.appendChild(empty);
+      return;
+    }
+
+    ranking.forEach((record, index) => {
+      const item = document.createElement("li");
+      item.className = "ranking-item";
+
+      const rank = document.createElement("span");
+
+      rank.className = "ranking-rank";
+      rank.textContent = `${index + 1}位`;
+
+      item.appendChild(rank);
+
+      const score = document.createElement("span");
+      score.className = "ranking-score";
+
+      if (type === "moves") {
+        score.textContent = `${record.moves} 回`;
+      } else {
+        score.textContent = formatTime(record.time);
+      }
+
+      item.appendChild(score);
+
+      rankingListElement.appendChild(item);
+    });
+  }
+
+  // ランキングリセット
+  function resetRanking() {
+    const confirmed = window.confirm(
+      "本当にランキングを削除しますか？\n削除した記録は元に戻せません。"
+    );
+
+    if (!confirmed) return;
+
+    try {
+      localStorage.removeItem(RANKING_KEY);
+
+      renderRanking();
+
+      window.alert("ランキングを削除しました。");
+    } catch (error) {
+      console.error("ランキングの削除に失敗しました", error);
+
+      window.alert("ランキングを削除できませんでした。");
+    }
+  }
+
+  // シャッフルボタン
+  shuffleButton.addEventListener("click", () => {
+  shuffleBoard();
+  });
+
+  // リスタートボタン
+  resetButton.addEventListener("click", () => {
+  restartGame();
+  });
+
+  // ランキング切り替え
+  rankingTypeElement.addEventListener("change", () => {
+  renderRanking();
+  });
+
+  // ランキングリセットボタン
+  rankingResetButton.addEventListener("click", resetRanking);
+
+  // キーボード操作
+  document.addEventListener("keydown", (event) => {
+  const keyMap = {
+  ArrowUp: SIZE,
+  ArrowDown: -SIZE,
+  ArrowLeft: 1,
+  ArrowRight: -1
+  };
+
+  if (!(event.key in keyMap)) return;
+
+  event.preventDefault();
+
+  const emptyIndex = getEmptyIndex();
+  const targetIndex = emptyIndex + keyMap[event.key];
+
+  if (
+  targetIndex < 0 ||
+  targetIndex >= TOTAL ||
+  !isAdjacent(emptyIndex, targetIndex)
+  ) {
+  return;
+  }
+
+  moveTile(targetIndex);
+  });
+
+  // 初期化
+  shuffleBoard();
+  renderRanking();
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,341 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131c">
+  <meta name="robots" content="noindex, nofollow">
+  <title>部隊員募集 | TEAM_1170</title>
+  <meta name="description" content="TEAM_1170の部隊員募集ページです。">
+  <style>
+    /* 基本設定・カラー変数 */
+    :root { color-scheme: dark; --bg: #10131c; --panel: #171c28; --panel-2: #1d2432; --line: rgba(255,255,255,.09); --text: #f3f5fb; --muted: #9aa4b6; --accent: #7c9cff; --accent-2: #a78bfa; --success: #86d6ad; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(ellipse at 15% 0%, rgba(93,119,220,.18), transparent 34rem), radial-gradient(ellipse at 95% 15%, rgba(167,139,250,.12), transparent 30rem), var(--bg); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+    a { color: inherit; text-decoration: none; }
+    button { font: inherit; }
+
+    /* 全体レイアウト */
+    .page-shell { min-height: 100vh; display: flex; flex-direction: column; }
+    .content { width: min(820px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0 90px; flex: 1; }
+    footer { padding: 22px 24px 30px; border-top: 1px solid var(--line); color: #778196; text-align: center; font-size: 11px; letter-spacing: .04em; }
+
+    /* ヘッダー */
+    .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 72px; padding: 0 max(32px, calc((100% - 1120px) / 2)); border-bottom: 1px solid var(--line); background: rgba(16,19,28,.55); }
+    .brand { display: flex; align-items: center; gap: 12px; font-weight: 800; letter-spacing: .11em; }
+    .brand-mark { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #10131c; font-size: 19px; box-shadow: 0 8px 28px rgba(124,156,255,.22); }
+    .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .19em; }
+    .header-note { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+
+    /* ページタイトル */
+    .eyebrow { color: #aebeff; font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+    h1 { margin: 14px 0 22px; font-size: clamp(32px, 6vw, 48px); line-height: 1.2; letter-spacing: -.045em; }
+    .intro { margin: 0; color: var(--muted); font-size: 15px; line-height: 2; }
+    .intro strong { color: var(--text); }
+
+    /* メインメッセージ */
+    .hero { position: relative; overflow: hidden; margin: 32px 0 42px; padding: 34px 30px; border: 1px solid rgba(124,156,255,.2); border-radius: 20px; background: linear-gradient(135deg, rgba(76,104,190,.2), rgba(167,139,250,.09)), var(--panel); }
+    .hero::after { position: absolute; right: -35px; bottom: -85px; width: 220px; height: 220px; border: 1px solid rgba(255,255,255,.06); border-radius: 50%; content: ""; }
+    .hero-label { color: #aebeff; font-size: 11px; font-weight: 800; letter-spacing: .16em; }
+    .hero h2 { position: relative; z-index: 1; margin: 12px 0; font-size: clamp(21px, 4vw, 28px); line-height: 1.5; }
+    .hero p { position: relative; z-index: 1; margin: 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+
+    /* 各セクション */
+    .section { margin-top: 46px; }
+    .section-heading { display: flex; align-items: center; gap: 12px; margin: 0 0 20px; font-size: 20px; letter-spacing: -.02em; }
+    .section-heading::before { width: 4px; height: 22px; border-radius: 4px; background: linear-gradient(var(--accent), var(--accent-2)); content: ""; }
+    .section-lead { margin: -8px 0 20px; color: var(--muted); font-size: 13px; line-height: 1.9; }
+    .info-card { margin-top: 14px; padding: 24px 26px; border: 1px solid var(--line); border-radius: 16px; background: linear-gradient(145deg, rgba(29,36,50,.96), rgba(22,27,39,.96)); }
+    .info-card h3 { margin: 0 0 12px; font-size: 16px; }
+    .info-card p { margin: 8px 0 0; color: var(--muted); font-size: 13px; line-height: 1.9; }
+    .info-card ul { display: grid; gap: 9px; margin: 12px 0 0; padding-left: 20px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .info-card li::marker { color: var(--accent); }
+
+    /* クラス別選考方針 */
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 14px; }
+    .class-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .class-table th, .class-table td { padding: 16px 18px; border-bottom: 1px solid var(--line); text-align: left; line-height: 1.8; }
+    .class-table th { background: rgba(255,255,255,.035); color: #c7d2fe; font-size: 12px; white-space: nowrap; }
+    .class-table td { color: var(--muted); }
+    .class-table td:first-child { color: var(--text); font-weight: 700; white-space: nowrap; }
+    .class-table tr:last-child td { border-bottom: none; }
+    .class-note { margin: 12px 0 0; color: var(--muted); font-size: 11px; line-height: 1.8; }
+
+    /* 加入までの流れ */
+    .flow-list { display: grid; gap: 12px; }
+    .flow-item { display: flex; gap: 16px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+    .flow-number { display: grid; place-items: center; flex: 0 0 auto; width: 32px; height: 32px; border-radius: 10px; background: rgba(124,156,255,.14); color: #b9c9ff; font-size: 13px; font-weight: 800; }
+    .flow-item h3 { margin: 2px 0 6px; font-size: 14px; }
+    .flow-item p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+
+    /* 応募質問 */
+    .question-list { display: grid; gap: 10px; margin: 0; padding-left: 24px; color: var(--muted); font-size: 13px; line-height: 1.9; }
+    .question-list li { padding-left: 4px; }
+    .question-list li::marker { color: var(--accent); font-weight: 800; }
+    .sub-question { margin-top: 18px; padding: 20px 22px; border: 1px solid rgba(167,139,250,.2); border-radius: 14px; background: rgba(167,139,250,.045); }
+    .sub-question h3 { margin: 0 0 12px; color: #c4b5fd; font-size: 15px; }
+    .sub-question p { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.8; }
+    .sub-question ul { display: grid; gap: 10px; margin: 0; padding-left: 20px; color: var(--muted); font-size: 13px; line-height: 1.8; }
+    .sub-question li::marker { color: var(--accent-2); }
+
+    /* カード内リンク */
+    .info-card a { color: #aebeff; text-decoration: underline; text-underline-offset: 3px; }
+    .info-card a:hover { color: #d0d9ff; }
+
+    /* 連絡先・コピー */
+    .contact-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.025); }
+    .contact-label { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: .12em; }
+    .contact-value { margin-top: 5px; color: #b9c9ff; font-size: 18px; font-weight: 800; }
+    .copy-button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 14px; border: 1px solid rgba(124,156,255,.3); border-radius: 10px; background: rgba(124,156,255,.1); color: #c7d2fe; font-size: 12px; font-weight: 700; cursor: pointer; transition: background .2s, transform .2s; }
+    .copy-button:hover { transform: translateY(-1px); background: rgba(124,156,255,.2); }
+    .copy-button:active { transform: translateY(0); }
+    .template-box { overflow: hidden; margin-top: 14px; border: 1px solid var(--line); border-radius: 14px; background: #111621; }
+    .template-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.025); }
+    .template-header strong { color: var(--muted); font-size: 12px; }
+    .template-box pre { overflow-x: auto; margin: 0; padding: 20px; color: #dbe4ff; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 13px; line-height: 2; white-space: pre-wrap; }
+    .template-note { margin: 12px 0 0; color: var(--muted); font-size: 12px; line-height: 1.8; }
+
+    /* 最後のメッセージ */
+    .closing { margin-top: 48px; padding: 30px 24px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(135deg, rgba(124,156,255,.1), rgba(167,139,250,.08)); text-align: center; }
+    .closing p { margin: 0; color: var(--muted); font-size: 13px; line-height: 2; }
+    .closing strong { display: block; margin-top: 14px; color: var(--text); font-size: 17px; }
+
+    /* ナビゲーション */
+    .back-link { display: inline-flex; align-items: center; gap: 10px; margin-top: 36px; padding: 12px 18px; border: 1px solid rgba(124,156,255,.25); border-radius: 12px; background: rgba(124,156,255,.1); color: #c7d2fe; font-size: 13px; font-weight: 700; transition: background .2s, transform .2s; }
+    .back-link:hover { transform: translateY(-2px); background: rgba(124,156,255,.18); }
+    button:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+
+    /* スマートフォン向け */
+    @media (max-width: 600px) {
+      .topbar { min-height: 64px; padding: 0 16px; }
+      .brand-mark { width: 34px; height: 34px; border-radius: 10px; font-size: 17px; }
+      .header-note { display: none; }
+      .content { width: calc(100% - 32px); padding: 46px 0 64px; }
+      .hero { margin: 26px 0 34px; padding: 26px 22px; }
+      .section { margin-top: 38px; }
+      .section-heading { font-size: 18px; }
+      .info-card { padding: 21px 19px; }
+      .class-table { min-width: 560px; }
+      .flow-item { padding: 16px; }
+      .contact-card { align-items: flex-start; flex-direction: column; }
+      .copy-button { width: 100%; }
+      .template-header { align-items: flex-start; flex-direction: column; }
+      .template-header .copy-button { width: auto; }
+    }
+
+    /* アニメーション軽減設定 */
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-shell">
+    <header class="topbar">
+      <a class="brand" href="../index.html" aria-label="TEAM_1170 ホーム">
+        <span class="brand-mark">T</span>
+        <span>
+          TEAM_1170
+          <small>MEMBER RECRUITMENT</small>
+        </span>
+      </a>
+      <span class="header-note">FIND YOUR PLACE.</span>
+    </header>
+
+    <main class="content">
+      <div class="eyebrow">TEAM_1170 RECRUITMENT</div>
+      <h1>部隊員募集</h1>
+      <p class="intro">一緒にゲームを楽しみながら、長く交流していける仲間を募集しています。</p>
+
+      <section class="hero">
+        <div class="hero-label">JOIN OUR TEAM</div>
+        <h2>一緒に楽しめる仲間を募集中！</h2>
+        <p>自分のペースを大切にしながら、ゆるく、楽しく、一緒に活動していきませんか？</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">募集について</h2>
+        <div class="info-card">
+          <h3>対象ゲーム</h3>
+          <p>スマートフォンゲーム『７人の賢者と錬金術師』</p>
+          <p>TEAM_1170は、スマートフォンゲーム「７人の賢者と錬金術師」のプレイヤーを中心としたコミュニティです。</p>
+
+          <p>ゲームの詳細については、公式サイトをご確認ください。</p>
+          <p><a href="https://7-renkin.com/" target="_blank" rel="noopener noreferrer">７人の賢者と錬金術師 公式サイト →</a></p>
+
+          <p>まだプレイしていない方はこちらからダウンロードできます。</p>
+          <ul>
+            <li><a href="https://apps.apple.com/jp/app/%EF%BC%97%E4%BA%BA%E3%81%AE%E8%B3%A2%E8%80%85%E3%81%A8%E9%8C%AC%E9%87%91%E8%A1%93%E5%B8%AB-%E3%81%AA%E3%81%AA%E3%82%8C%E3%82%93/id1445839513" target="_blank" rel="noopener noreferrer">App Store（iOS）</a></li>
+            <li><a href="https://play.google.com/store/apps/details?id=jp.pochistudio.Alchemist" target="_blank" rel="noopener noreferrer">Google Play（Android）</a></li>
+          </ul>
+
+          <p class="class-note">※ TEAM_1170は、プレイヤーによる非公式コミュニティです。</p>
+        </div>
+
+        <div class="info-card">
+          <h3>活動方針</h3>
+          <p>TEAM_1170では、ゆるく、自分のペースで楽しむことを大切にしています。</p>
+          <ul>
+            <li>ゲーム内での交流や協力</li>
+            <li>Discordを利用したコミュニケーション</li>
+            <li>日常的な雑談や情報交換</li>
+            <li>ゲーム制作など、興味のあることへの挑戦</li>
+          </ul>
+          <p>それぞれのペースを尊重しながら、長く付き合える関係を築いていきたいと考えています。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">こんな方を歓迎しています！</h2>
+        <div class="info-card">
+          <h3>💬 コミュニケーションを大切にできる方</h3>
+          <p>分からないことを質問したり、困ったときに助けを求めたり、自分の考えを伝えたりできる方を歓迎しています。</p>
+          <p>また、周囲との会話や交流を楽しめる方も大歓迎です。</p>
+        </div>
+        <div class="info-card">
+          <h3>🛠️ ゲーム制作やものづくりに興味がある方</h3>
+          <p>ゲームを遊ぶだけでなく、ゲーム制作やプログラミングなど、何かを作ることに興味がある方も歓迎しています。</p>
+          <p>経験や知識の有無は問いません。興味があるという気持ちを大切にしています。</p>
+        </div>
+        <div class="info-card">
+          <h3>🤝 長く一緒に活動できる方</h3>
+          <p>一時的な参加ではなく、７人の賢者と錬金術師を長く楽しみながら、TEAM_1170の仲間として活動していける方を探しています。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">ゲーム内クラスについて</h2>
+        <p class="section-lead">ゲーム内クラスは、応募時の参考情報として確認しています。クラスによって加入までの確認内容が異なる場合があります。</p>
+        <div class="table-wrap">
+          <table class="class-table">
+            <thead>
+              <tr><th>ゲーム内クラス</th><th>選考方針</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>クラス11〜12</td><td>歓迎しています。基本的な確認を行ったうえで、加入をご案内します。</td></tr>
+              <tr><td>クラス13</td><td>活動状況や人柄を確認し、必要に応じて面談を行ったうえで判断します。</td></tr>
+              <tr><td>クラス14</td><td>志望動機や今後の活動方針などを詳しく確認し、慎重に検討します。</td></tr>
+              <tr><td>クラス10以下</td><td>プレイ状況や今後の継続意思などを確認したうえで判断します。</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="class-note">※クラスだけで加入の可否を決定するわけではありません。コミュニケーションや継続意思なども含めて総合的に判断しています。</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">加入までの流れ</h2>
+        <div class="flow-list">
+          <div class="flow-item">
+            <span class="flow-number">01</span>
+            <div><h3>お問い合わせ</h3><p>Discordから加入希望の旨をご連絡ください。</p></div>
+          </div>
+          <div class="flow-item">
+            <span class="flow-number">02</span>
+            <div><h3>応募内容の確認</h3><p>応募内容を確認し、必要に応じて追加の質問やヒアリングを行います。</p></div>
+          </div>
+          <div class="flow-item">
+            <span class="flow-number">03</span>
+            <div><h3>面談・確認</h3><p>志望理由や今後のプレイ方針、普段の交流スタイルなどをお聞きします。</p></div>
+          </div>
+          <div class="flow-item">
+            <span class="flow-number">04</span>
+            <div><h3>加入についてのご案内</h3><p>お互いの希望や活動方針を確認したうえで、加入についてご案内します。</p></div>
+          </div>
+        </div>
+        <p class="section-lead" style="margin-top:16px;">長く一緒に活動していく仲間だからこそ、加入前にお互いのことを知る機会を大切にしています。</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">応募・お問い合わせ</h2>
+        <p class="section-lead">加入を検討している方や、サイトについて質問がある方は、お気軽にお問い合わせください。</p>
+
+        <div class="contact-card">
+          <div>
+            <div class="contact-label">DISCORD CONTACT</div>
+            <div class="contact-value">Discord:ryo1170</div>
+          </div>
+          <a class="copy-button" href="https://discord.com/users/608782808554668042" target="_blank" rel="noopener noreferrer">
+            Discordプロフィールを開く
+          </a>
+        </div>
+
+        <p class="section-lead" style="margin-top:22px;">ご連絡の際は、以下のテンプレートをご利用ください。</p>
+        <div class="template-box">
+          <div class="template-header">
+            <strong>連絡テンプレート</strong>
+            <button class="copy-button" type="button" data-copy="名前：\nゲーム内ID：\n連絡内容：">📋 テンプレートをコピー</button>
+          </div>
+          <pre>名前：
+ゲーム内ID：
+連絡内容：</pre>
+        </div>
+        <p class="template-note">連絡内容には、サイトについての質問や部隊への入隊希望などをご記入ください。</p>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">入隊希望の方へ</h2>
+        <p class="section-lead">入隊を希望される場合は、以下の内容も併せて教えていただけるとスムーズです。</p>
+        <ol class="question-list">
+          <li>TEAM_1170を志望した理由</li>
+          <li>今後どのようにゲームを楽しんでいきたいか</li>
+          <li>これまで所属していた部隊から移動した理由（該当する場合）</li>
+          <li>部隊内でどのような交流をしていきたいか</li>
+          <li>長期的に所属する意思があるか</li>
+          <li>どのような部隊や交流環境を求めているか</li>
+          <li>部隊内で自分から取り組んでみたいことはあるか</li>
+          <li>部隊内での交流や活動において、大切にしたいことは何か</li>
+        </ol>
+
+        <div class="sub-question">
+          <h3>クラス14の方への追加質問</h3>
+          <p>クラス14の方については、加入後の活動方針がお互いに合っているかを確認するため、追加で以下の内容をお聞きしています。事前にご確認のうえ、ご回答をご用意ください。</p>
+          <ul>
+            <li>自分が持っている技術や得意分野について<br>例：イラスト制作、ゲームの企画・プランニング、プログラミングなど</li>
+            <li>これまで所属していた部隊での活動について</li>
+            <li>今後、TEAM_1170で実現したいことはあるか</li>
+          </ul>
+          <p style="margin-top:14px;">ご自身の得意なことや、今後やってみたいことなどもぜひ教えてください。</p>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2 class="section-heading">コミュニケーションについて</h2>
+        <div class="info-card">
+          <p>TEAM_1170では、メンバー同士のコミュニケーションを大切にしています。</p>
+          <p>そのため、加入希望の方には、ご自身の考えや希望をある程度お伝えいただくことをお願いしています。</p>
+          <p>最初から完璧な回答である必要はありません。自分の言葉で伝えようとする姿勢を大切にしています。</p>
+        </div>
+      </section>
+
+      <div class="closing">
+        <p>まずは質問や相談だけでも大丈夫です。</p>
+        <p>一緒に楽しめる仲間と出会えることを楽しみにしています。</p>
+        <strong>TEAM_1170</strong>
+        <p>ゆるく、自分のペースで。長く楽しめる仲間と。</p>
+      </div>
+
+      <a class="back-link" href="./index.html"><span>←</span>TEAM_1170について</a>
+    </main>
+
+    <footer>TEAM_1170 <span aria-hidden="true">·</span> MEMBER RECRUITMENT</footer>
+  </div>
+
+  <script>
+    // コピー処理
+    document.querySelectorAll("[data-copy]").forEach(button => {
+      button.addEventListener("click", async () => {
+        const originalText = button.textContent;
+        try {
+          await navigator.clipboard.writeText(button.dataset.copy);
+          button.textContent = "✓ コピーしました";
+          setTimeout(() => { button.textContent = originalText; }, 1800);
+        } catch {
+          button.textContent = "コピーできませんでした";
+          setTimeout(() => { button.textContent = originalText; }, 1800);
+        }
+      });
+    });
+  </script>
+</body>
+</html>

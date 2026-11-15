@@ -1,0 +1,573 @@
+
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10131c">
+  <title>TEAM_1170 — Mini Game Collection</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E %3Cdefs%3E %3ClinearGradient id='bg' x1='0' y1='0' x2='1' y2='1'%3E %3Cstop offset='0%25' stop-color='%237c9cff'/%3E %3Cstop offset='100%25' stop-color='%23b18aff'/%3E %3C/linearGradient%3E %3C/defs%3E %3Crect width='64' height='64' rx='19' fill='url(%23bg)'/%3E %3Ctext x='32' y='45' text-anchor='middle' font-family='Arial, sans-serif' font-size='43' font-weight='900' fill='%2310131c'%3ET%3C/text%3E %3C/svg%3E">
+  <style>
+  /* 基本設定・カラー変数 */
+  :root { color-scheme: dark; --bg: #10131c; --panel: #171c28; --panel-2: #1d2432; --line: rgba(255,255,255,.09); --text: #f3f5fb; --muted: #9aa4b6; --accent: #7c9cff; --accent-2: #a78bfa; --sidebar-width: 250px; }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; color: var(--text); background: radial-gradient(ellipse at 15% 0%, rgba(93,119,220,.18), transparent 34rem), radial-gradient(ellipse at 95% 15%, rgba(167,139,250,.12), transparent 30rem), var(--bg); font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; }
+  code { color: #c7d2fe; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* 全体レイアウト */
+  .app-shell { min-height: 100vh; }
+  .main-area { min-height: 100vh; margin-left: var(--sidebar-width); }
+  .content { width: min(1120px, calc(100% - 88px)); margin: 0 auto; padding: 66px 0 80px; }
+  footer { margin-left: var(--sidebar-width); padding: 20px 44px 30px; border-top: 1px solid var(--line); color: #778196; font-size: 11px; }
+
+  /* サイドバー */
+  .sidebar { position: fixed; inset: 0 auto 0 0; z-index: 20; width: var(--sidebar-width); display: flex; flex-direction: column; padding: 26px 18px; border-right: 1px solid var(--line); background: rgba(16,19,28,.92); backdrop-filter: blur(18px); }
+  .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 26px; font-weight: 800; letter-spacing: .11em; }
+  .brand-mark { display: grid; place-items: center; flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px; background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #10131c; font-size: 19px; box-shadow: 0 8px 28px rgba(124,156,255,.22); }
+  .brand small { display: block; margin-top: 2px; color: var(--muted); font-size: 10px; font-weight: 600; letter-spacing: .19em; }
+  .nav-label { padding: 10px 10px 9px; color: #778196; font-size: 10px; font-weight: 800; letter-spacing: .16em; }
+  .game-nav { display: grid; gap: 5px; overflow-y: auto; padding: 0 2px 12px; }
+  .nav-link { display: flex; align-items: center; gap: 11px; min-width: 0; padding: 11px 12px; border: 1px solid transparent; border-radius: 11px; color: #b5bfd0; font-size: 13px; transition: background .16s ease, color .16s ease, border-color .16s ease; }
+  .nav-link:hover { background: rgba(255,255,255,.05); color: var(--text); }
+  .nav-link.active { border-color: rgba(124,156,255,.2); background: #8ce0bd; color: #dce5ff; box-shadow: 0 0 10px rgba(140,224,189,.45); }
+  .nav-icon { width: 24px; height: 24px; object-fit: contain; flex-shrink: 0; }
+  .sidebar-bottom { margin-top: auto; padding: 14px 10px 0; border-top: 1px solid var(--line); color: #778196; font-size: 11px; line-height: 1.7; }
+
+  /* ヘッダー・モバイルナビゲーション */
+  .topbar { display: flex; align-items: center; justify-content: flex-end; min-height: 72px; padding: 0 44px; border-bottom: 1px solid var(--line); }
+  .header-note { color: var(--muted); font-size: 12px; letter-spacing: .04em; }
+  .mobile-brand, .menu-button, .mobile-nav-panel, .nav-backdrop { display: none; }
+
+  /* ページタイトル・見出し */
+  .eyebrow { color: #aebeff; font-size: 11px; font-weight: 800; letter-spacing: .2em; text-transform: uppercase; }
+  h1 { margin: 13px 0 12px; font-size: clamp(34px, 6vw, 58px); line-height: 1.06; letter-spacing: -.045em; }
+  .intro { max-width: 560px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.8; }
+  .section-head { display: flex; align-items: end; justify-content: space-between; gap: 16px; margin: 54px 0 18px; }
+  .section-head h2 { margin: 0; font-size: 18px; letter-spacing: -.02em; }
+  .count { color: var(--muted); font-size: 12px; }
+
+  /* aboutセクションリンク */
+  .about-link { color: #aebeff; text-decoration: underline; text-underline-offset: 3px; }
+  .about-link:hover { color: #d0d9ff; }
+
+  /* ゲームカード一覧 */
+  .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+  .game-card { position: relative; display: flex; min-height: 176px; overflow: hidden; padding: 22px; border: 1px solid var(--line); border-radius: 18px; background: linear-gradient(145deg, rgba(29,36,50,.96), rgba(22,27,39,.96)); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+  .game-card:not(.disabled):hover { transform: translateY(-3px); border-color: rgba(124,156,255,.55); background: #20283a; }
+  .game-card:focus-visible, .menu-button:focus-visible, .nav-link:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  .game-card.disabled { cursor: default; opacity: .76; }
+  .card-content { position: relative; z-index: 1; display: flex; flex: 1; flex-direction: column; align-items: flex-start; }
+  .game-icon { display: grid; place-items: center; width: 48px; height: 48px; margin-bottom: 18px; border-radius: 14px; background: rgba(124,156,255,.13); font-size: 24px; }
+  .game-card:nth-child(2) .game-icon { background: rgba(69,211,164,.12); }
+  .game-card:nth-child(3) .game-icon { background: rgba(255,190,92,.12); }
+  .game-card:nth-child(4) .game-icon { background: rgba(244,114,182,.12); }
+  .game-title { margin: 0 0 6px; font-size: 17px; font-weight: 750; }
+  .game-desc { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.65; }
+  .arrow { margin-left: auto; align-self: center; color: #aebeff; font-size: 22px; }
+  .empty-hint { margin-top: 22px; padding: 16px 18px; border: 1px dashed rgba(255,255,255,.15); border-radius: 14px; color: var(--muted); font-size: 12px; line-height: 1.7; }
+
+  /* ゲームカードのメタ情報・タグ */
+  .card-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+  .game-genre, .game-ai, .game-event { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 999px; font-size: .75rem; font-weight: 600; line-height: 1.4; }
+  .game-genre { color: var(--accent); background: rgba(124,156,255,.13); }
+  .game-ai { color: var(--muted); background: var(--panel-2); }
+  .game-event { color: var(--accent-2); background: rgba(167,139,250,.12); }
+  .game-added-date { flex-basis: 100%; margin-top: 2px; color: var(--muted); font-size: .75rem; white-space: nowrap; }
+  .game-author { margin-top: 9px; color: #8995aa; font-size: 11px; }
+
+  /* ゲーム画像 */
+  .game-image { width: 120px; height: 120px; object-fit: contain; border-radius: 12px; }
+
+  /* 検索・フィルター */
+  .game-controls { display: flex; gap: 12px; margin-bottom: 18px; }
+  .search-box { position: relative; flex: 1; min-width: 0; }
+  .search-box input { width: 100%; height: 44px; padding: 0 14px 0 40px; border: 1px solid var(--line); border-radius: 12px; outline: none; color: var(--text); background: var(--panel); font: inherit; font-size: 13px; transition: border-color .2s, box-shadow .2s; }
+  .search-box input:focus, .game-controls select:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(124,156,255,.12); }
+  .search-box input::placeholder { color: #778196; }
+  .search-icon { position: absolute; top: 50%; left: 14px; transform: translateY(-50%); color: var(--muted); font-size: 21px; pointer-events: none; }
+  .game-controls select { width: 190px; min-width: 0; padding: 0 12px; border: 1px solid var(--line); border-radius: 12px; outline: none; color: var(--text); background: var(--panel); font: inherit; font-size: 13px; cursor: pointer; }
+  .search-result { margin: 24px 0; padding: 24px; border: 1px dashed var(--line); border-radius: 14px; color: var(--muted); text-align: center; font-size: 13px; }
+
+  /* イベントバナー */
+  .event-entry { margin: 32px 0; }
+  .event-banner { display: flex; align-items: center; gap: 18px; padding: 20px 24px; border: 1px solid var(--accent); border-radius: 16px; background: linear-gradient(110deg, rgba(108,140,255,.16), rgba(167,139,250,.12)); transition: transform .2s, border-color .2s; }
+  .event-banner:hover { transform: translateY(-3px); border-color: var(--accent-2); }
+  .event-banner-icon { font-size: 32px; }
+  .event-banner-content { display: grid; flex: 1; gap: 6px; }
+  .event-banner-content span { color: var(--muted); font-size: 13px; }
+  .event-banner-arrow { color: var(--accent); font-size: 22px; }
+  .event-banner-content #event-datetime { color: var(--accent); font-weight: 600; }
+
+  /* イベント一覧バナー */
+  .event-list-banner { display: flex; align-items: center; gap: 16px; margin-top: 14px; padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255,255,255,.035); transition: background .2s, border-color .2s, transform .2s; }
+  .event-list-banner:hover { background: var(--panel-2); border-color: var(--accent); transform: translateY(-2px); }
+  .event-list-banner-icon { font-size: 26px; }
+  .event-list-banner-content { display: grid; flex: 1; gap: 5px; }
+  .event-list-banner-content span { color: var(--muted); font-size: 12px; }
+  .event-list-banner-arrow { color: var(--accent); font-size: 20px; }
+
+  /* モバイル向け検索・イベント調整 */
+  @media (max-width: 600px) {
+    .game-controls { flex-direction: column; gap: 10px; }
+    .game-controls select { width: 100%; height: 44px; }
+    .event-banner { padding: 16px; gap: 12px; }
+  }
+
+  /* タブレット・スマートフォン向けレイアウト */
+  @media (max-width: 760px) {
+    .sidebar { display: none; }
+    .main-area { margin-left: 0; }
+    .topbar { position: sticky; top: 0; z-index: 15; justify-content: space-between; min-height: 64px; padding: 0 18px; background: rgba(16,19,28,.88); backdrop-filter: blur(18px); }
+    .mobile-brand { display: flex; align-items: center; gap: 9px; font-size: 12px; font-weight: 800; letter-spacing: .1em; }
+    .mobile-brand .brand-mark { width: 32px; height: 32px; border-radius: 10px; font-size: 16px; }
+    .card-content { display: grid; grid-template-columns: 88px minmax(0, 1fr); column-gap: 14px; }
+    .game-image { width: 88px; height: 88px; }
+    .menu-button { display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 5px; width: 42px; height: 42px; padding: 0; border: 1px solid var(--line); border-radius: 12px; color: var(--text); background: var(--panel); cursor: pointer; }
+    .menu-button span { display: block; width: 20px; height: 2px; border-radius: 2px; background: currentColor; transition: transform .3s ease, opacity .2s ease; }
+    .menu-button[aria-expanded="true"] span:nth-of-type(1) { transform: translateY(7px) rotate(45deg); }
+    .menu-button[aria-expanded="true"] span:nth-of-type(2) { opacity: 0; }
+    .menu-button[aria-expanded="true"] span:nth-of-type(3) { transform: translateY(-7px) rotate(-45deg); }
+    .header-note { display: none; }
+    .mobile-nav-panel { position: fixed; top: 64px; right: 12px; z-index: 30; display: none; width: min(310px, calc(100vw - 24px)); max-height: calc(100vh - 84px); overflow: auto; padding: 12px; border: 1px solid var(--line); border-radius: 16px; background: rgba(23,28,40,.98); box-shadow: 0 18px 55px rgba(0,0,0,.45); }
+    .mobile-nav-panel.open { display: block; }
+    .mobile-nav-panel .nav-label { padding-top: 5px; }
+    .mobile-nav-panel .game-nav { max-height: calc(100vh - 150px); }
+    .nav-backdrop { position: fixed; inset: 64px 0 0; z-index: 25; display: none; background: rgba(0,0,0,.35); }
+    .nav-backdrop.open { display: block; }
+    .content { width: min(100% - 32px, 560px); padding: 48px 0 64px; }
+    .grid { grid-template-columns: 1fr; gap: 12px; }
+    .game-card { min-height: 158px; }
+    .section-head { margin-top: 42px; }
+    footer { margin-left: 0; padding: 20px 16px 28px; }
+  }
+
+  /* アニメーション軽減設定 */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
+  }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="ゲームナビゲーション">
+      <a class="brand" href="./index.html" aria-label="TEAM_1170 ホーム">
+        <span class="brand-mark">T</span>
+        <span>TEAM_1170<small>MINI GAME COLLECTION</small></span>
+      </a>
+      <div class="nav-label">GAME LIBRARY</div>
+      <nav class="game-nav" id="desktop-game-nav" aria-label="ゲーム一覧"></nav>
+      <div class="sidebar-bottom">A LITTLE PLACE TO PLAY.<br>いつでも、気軽に遊ぼう。</div>
+    </aside>
+
+    <div class="main-area">
+      <header class="topbar">
+        <a class="mobile-brand" href="./index.html" aria-label="TEAM_1170 ホーム">
+          <span class="brand-mark">T</span><span>TEAM_1170</span>
+        </a>
+        <div class="header-note">A LITTLE PLACE TO PLAY.</div>
+        <button class="menu-button" id="menu-button" type="button" aria-label="ゲームメニューを開く" aria-expanded="false" aria-controls="mobile-nav-panel">
+          <span></span><span></span><span></span>
+        </button>
+      </header>
+
+      <div class="nav-backdrop" id="nav-backdrop"></div>
+      <nav class="mobile-nav-panel" id="mobile-nav-panel" aria-label="ゲームメニュー">
+        <div class="nav-label">GAME LIBRARY</div>
+        <div class="game-nav" id="mobile-game-nav"></div>
+      </nav>
+
+      <main class="content">
+        <div class="eyebrow">Welcome to your game shelf</div>
+        <h1>遊びたいときに、<br>サクッと遊ぼう。</h1>
+        <p class="intro">気軽に遊べるミニゲームをひとまとめにしたゲームコレクション。<br>好きなゲームを選んで楽しもう。</p>
+
+        <a class="about-link" href="./about/index.html">本サイト、TEAM_1170について →</a>
+
+        <!-- 開催中イベントバナー -->
+        <section class="event-entry" id="event-entry" hidden>
+          <a class="event-banner" id="event-banner" href="#">
+            <span class="event-banner-icon" id="event-icon"></span>
+            <span class="event-banner-content">
+              <strong id="event-title"></strong>
+              <span id="event-datetime"></span>
+              <span id="event-description"></span>
+            </span>
+            <span class="event-banner-arrow">→</span>
+          </a>
+        </section>
+
+        <!-- イベント一覧バナー -->
+        <a class="event-list-banner" href="./events/index.html">
+          <span class="event-list-banner-icon">🎉</span>
+          <span class="event-list-banner-content">
+            <strong>イベント一覧</strong>
+            <span>開催中・開催予定・過去のイベントはこちら</span>
+          </span>
+          <span class="event-list-banner-arrow">→</span>
+        </a>
+
+        <div class="section-head">
+          <h2>ゲーム一覧</h2>
+          <span class="count" id="game-count">0 GAMES</span>
+        </div>
+
+        <div class="game-controls">
+          <div class="search-box">
+            <span class="search-icon">⌕</span>
+            <input type="search" id="game-search" placeholder="ゲーム名・制作" aria-label="ゲームを検索">
+          </div>
+          <select id="event-filter" aria-label="イベントで絞り込み">
+            <option value="">すべてのイベント</option>
+          </select>
+          <select id="genre-filter" aria-label="ジャンルで絞り込み">
+            <option value="">すべてのジャンル</option>
+          </select>
+          <select id="ai-filter" aria-label="使用AIで絞り込み">
+            <option value="">すべてのAI</option>
+          </select>
+        </div>
+
+        <p class="search-result" id="search-result" aria-live="polite" hidden>該当するゲームがありません。</p>
+        <section class="grid" id="game-grid" aria-label="ゲーム一覧"></section>
+
+        <p class="empty-hint">
+          💡 ゲームを追加するには、<code>games/</code> フォルダにHTMLファイルを置き、ページ下部の <code>games</code> 配列に項目を追加してください。
+          各ゲームは単独のHTMLとしても起動できます。
+        </p>
+      </main>
+    </div>
+  </div>
+
+  <footer>TEAM_1170 <span aria-hidden="true">·</span> Built for offline play</footer>
+  <script src="./events/events.js"></script>
+  <script>
+  // ゲームの追加・変更はこの配列を編集してください。
+  // href は index.html から見た相対パスです。
+  // event はイベント名を直接指定します。イベント一覧への登録は不要です。
+  const games = [
+    {
+      title: "スライドパズル",
+      description: "数字のタイルを動かして、正しい順番に並べよう。",
+      author: "RYO",
+      addedDate: "2026-11-14",
+      genre: "パズル",
+      image: "./gameImages/slide-puzzle.svg",
+      // event: "2026年テストイベント",
+      ai: "ChatGPT",
+      href: "./games/SlidePuzzle.html",
+      enabled: true
+    },
+    {
+      title: "ノノグラム",
+      description: "縦横の数字をヒントにマスを塗りつぶして、隠された絵を完成させよう。",
+      author: "RYO",
+      addedDate: "2026-11-15",
+      genre: "パズル",
+      image: "./gameImages/nonogram.svg",
+      // event: "テストタグ",
+      ai: "ChatGPT",
+      href: "./games/Nonogram.html",
+      enabled: true
+    }
+  ];
+
+  const now = new Date();
+
+  // 開催開始日時を取得
+  function getStartDateTime(event) {
+    if (!event.startDateTime) return null;
+    const date = new Date(event.startDateTime);
+    return Number.isNaN(date.getTime()) ? null : date;
+  }
+
+  // 開催終了日時を取得
+  function getEndDateTime(event) {
+    if (event.endDateTime) {
+      const date = new Date(event.endDateTime);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    if (event.endDate) {
+      const date = new Date(`${event.endDate}T23:59:59`);
+      return Number.isNaN(date.getTime()) ? null : date;
+    }
+
+    return null;
+  }
+
+  // 開催日時を表示用に整形
+  function formatEventDateTime(event) {
+    const date = getStartDateTime(event);
+    if (!date) return "";
+
+    const formattedDate = new Intl.DateTimeFormat("ja-JP", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short"
+    }).format(date);
+
+    const formattedTime = new Intl.DateTimeFormat("ja-JP", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23"
+    }).format(date);
+
+    return `${formattedDate} ${formattedTime} 開始`;
+  }
+
+  // 開催中のイベントを取得
+  const activeEvents = events
+    .filter(event => {
+      const start = getStartDateTime(event);
+      const end = getEndDateTime(event);
+      return start && end && start <= now && now <= end;
+    })
+    .sort((a, b) => getEndDateTime(a) - getEndDateTime(b));
+
+  // 開催予定のイベントを取得
+  const upcomingEvents = events
+    .filter(event => {
+      const start = getStartDateTime(event);
+      return start && start > now;
+    })
+    .sort((a, b) => getStartDateTime(a) - getStartDateTime(b));
+
+  // 開催中を優先し、なければ最も近い開催予定を選択
+  const targetEvent = activeEvents[0] || upcomingEvents[0];
+
+  if (targetEvent) {
+    const banner = document.getElementById("event-entry");
+
+    document.getElementById("event-banner").href = `./events/${targetEvent.file}`;
+    document.getElementById("event-icon").textContent = targetEvent.icon || "🎉";
+    document.getElementById("event-title").textContent = targetEvent.title;
+    document.getElementById("event-datetime").textContent = formatEventDateTime(targetEvent);
+    document.getElementById("event-description").textContent = targetEvent.description || "";
+
+    banner.hidden = false;
+  }
+
+  // ゲーム表示処理
+  const visibleGames = games.filter(game => game.enabled);
+  const grid = document.getElementById("game-grid");
+  const count = document.getElementById("game-count");
+  const desktopNav = document.getElementById("desktop-game-nav");
+  const mobileNav = document.getElementById("mobile-game-nav");
+  const menuButton = document.getElementById("menu-button");
+  const mobilePanel = document.getElementById("mobile-nav-panel");
+  const backdrop = document.getElementById("nav-backdrop");
+  const searchInput = document.getElementById("game-search");
+  const genreFilter = document.getElementById("genre-filter");
+  const searchResult = document.getElementById("search-result");
+  const eventFilter = document.getElementById("event-filter");
+  const aiFilter = document.getElementById("ai-filter");
+
+  // ジャンルの選択肢を生成
+  const genres = [...new Set(visibleGames.map(game => game.genre).filter(Boolean))]
+    .sort((a, b) => a.localeCompare(b, "ja"));
+
+  genres.forEach(genre => {
+    const option = document.createElement("option");
+    option.value = genre;
+    option.textContent = genre;
+    genreFilter.append(option);
+  });
+
+  // AIの選択肢を生成
+  const aiValues = [...new Set(
+    visibleGames
+      .map(game => typeof game.ai === "string" ? game.ai.trim() : "")
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "ja"));
+
+  aiValues.forEach(ai => {
+    const option = document.createElement("option");
+    option.value = ai;
+    option.textContent = ai;
+    aiFilter.append(option);
+  });
+
+  // AIが未設定のゲームがあれば選択肢に追加
+  const hasUnsetAi = visibleGames.some(game =>
+    typeof game.ai !== "string" || !game.ai.trim()
+  );
+
+  if (hasUnsetAi) {
+    const option = document.createElement("option");
+    option.value = "__unset__";
+    option.textContent = "未設定";
+    aiFilter.append(option);
+  }
+
+  // ゲーム情報からイベントの選択肢を生成
+  const eventNames = [...new Set(
+    visibleGames
+      .map(game => typeof game.event === "string" ? game.event.trim() : "")
+      .filter(Boolean)
+  )].sort((a, b) => a.localeCompare(b, "ja"));
+
+  eventNames.forEach(eventName => {
+    const option = document.createElement("option");
+    option.value = eventName;
+    option.textContent = eventName;
+    eventFilter.append(option);
+  });
+
+  // ゲームカードを生成
+  function createGameCard(game) {
+    const card = document.createElement(game.enabled ? "a" : "article");
+    card.className = `game-card${game.enabled ? "" : " disabled"}`;
+
+    if (game.enabled) {
+      card.href = game.href;
+    }
+
+    const image = document.createElement("img");
+    image.className = "game-image";
+    image.src = game.image;
+    image.alt = "";
+    image.loading = "lazy";
+
+    const body = document.createElement("div");
+    body.className = "game-card-body";
+
+    const title = document.createElement("h2");
+    title.className = "game-title";
+    title.textContent = game.title;
+
+    const description = document.createElement("p");
+    description.className = "game-description";
+    description.textContent = game.description;
+
+    const author = document.createElement("p");
+    author.className = "game-author";
+    author.textContent = `制作：${game.author}`;
+
+    const meta = document.createElement("div");
+    meta.className = "game-meta";
+
+    const genre = document.createElement("span");
+    genre.className = "game-genre";
+    genre.textContent = game.genre || "未設定";
+
+    const ai = document.createElement("span");
+    ai.className = "game-ai";
+    ai.textContent = `AI：${
+      typeof game.ai === "string" && game.ai.trim()
+        ? game.ai.trim()
+        : "未設定"
+    }`;
+
+    const addedDate = document.createElement("span");
+    addedDate.className = "game-added-date";
+    addedDate.textContent = game.addedDate
+      ? `追加日：${game.addedDate.replaceAll("-", "/")}`
+      : "追加日：未設定";
+
+    meta.append(genre, ai, addedDate);
+
+    // イベント名はゲーム情報から直接表示
+    const eventName = typeof game.event === "string" ? game.event.trim() : "";
+
+    if (eventName) {
+      const eventLabel = document.createElement("span");
+      eventLabel.className = "game-event";
+      eventLabel.textContent = `イベント：${eventName}`;
+      meta.append(eventLabel);
+    }
+
+    body.append(title, description, author, meta);
+    card.append(image, body);
+
+    return card;
+  }
+
+  // ナビゲーション項目を生成
+  function createNavigationItem(game) {
+    const link = document.createElement("a");
+    link.href = game.href;
+    link.textContent = game.title;
+    return link;
+  }
+
+  // PC・スマホのナビゲーションを生成
+  visibleGames.forEach(game => {
+    desktopNav.append(createNavigationItem(game));
+    mobileNav.append(createNavigationItem(game));
+  });
+
+  // ゲーム一覧を描画
+  function renderGames() {
+    const keyword = searchInput.value.trim().toLowerCase();
+    const selectedGenre = genreFilter.value;
+    const selectedEvent = eventFilter.value;
+    const selectedAi = aiFilter.value;
+
+    const filteredGames = visibleGames.filter(game => {
+      const gameEvent = typeof game.event === "string" ? game.event.trim() : "";
+
+      const searchableText = [
+        game.title,
+        game.description,
+        game.author,
+        gameEvent
+      ].filter(Boolean).join(" ").toLowerCase();
+
+      const matchesKeyword = searchableText.includes(keyword);
+      const matchesGenre = !selectedGenre || game.genre === selectedGenre;
+      const matchesEvent = !selectedEvent || gameEvent === selectedEvent;
+
+      const gameAi = typeof game.ai === "string" ? game.ai.trim() : "";
+      const matchesAi = !selectedAi ||
+        (selectedAi === "__unset__"
+          ? !gameAi
+          : gameAi === selectedAi);
+
+      return matchesKeyword && matchesGenre && matchesEvent && matchesAi;
+    });
+
+    grid.replaceChildren();
+
+    filteredGames.forEach(game => {
+      grid.append(createGameCard(game));
+    });
+
+    count.textContent = `${filteredGames.length} GAMES`;
+    searchResult.hidden = filteredGames.length > 0;
+  }
+
+  // 検索・絞り込みイベント
+  searchInput.addEventListener("input", renderGames);
+  genreFilter.addEventListener("change", renderGames);
+  eventFilter.addEventListener("change", renderGames);
+  aiFilter.addEventListener("change", renderGames);
+
+  // スマホメニューを開閉
+  function closeMobileMenu() {
+    mobilePanel.classList.remove("open");
+    backdrop.classList.remove("open");
+    menuButton.setAttribute("aria-expanded", "false");
+  }
+
+  menuButton.addEventListener("click", () => {
+    const isOpen = mobilePanel.classList.toggle("open");
+    backdrop.classList.toggle("open", isOpen);
+    menuButton.setAttribute("aria-expanded", String(isOpen));
+  });
+
+  backdrop.addEventListener("click", closeMobileMenu);
+
+  mobileNav.addEventListener("click", event => {
+    if (event.target.closest("a")) {
+      closeMobileMenu();
+    }
+  });
+
+  // 初回描画
+  renderGames();
+  </script>
+</body>
+</html>
