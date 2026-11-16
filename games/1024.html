@@ -1,0 +1,925 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>1024 PUZZLE</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  padding: 24px 14px;
+  background: #171923;
+  color: #f7fafc;
+  font-family: system-ui, sans-serif;
+  display: flex;
+  justify-content: center;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.container {
+  width: 100%;
+  max-width: 430px;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+h1 {
+  font-size: 34px;
+  margin: 0;
+  letter-spacing: 4px;
+  color: #f6ad55;
+}
+
+.subtitle {
+  font-size: 12px;
+  color: #a0aec0;
+  letter-spacing: 3px;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  background: #292d3e;
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stat-label {
+  color: #a0aec0;
+  font-size: 11px;
+}
+
+.stat-value {
+  font-size: 25px;
+  font-weight: bold;
+  font-variant-numeric: tabular-nums;
+}
+
+.board {
+  width: 100%;
+  aspect-ratio: 1;
+  padding: 9px;
+  background: #292d3e;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.grid-bg {
+  position: absolute;
+  inset: 9px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.cell {
+  background: #3b4054;
+  border-radius: 9px;
+}
+
+.tiles-layer {
+  position: absolute;
+  inset: 9px;
+  pointer-events: none;
+}
+
+.tile {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  font-size: clamp(19px, 6vw, 29px);
+  font-weight: 800;
+  color: white;
+  will-change: transform;
+  transition: transform 190ms cubic-bezier(.2,.75,.25,1);
+  overflow: visible;
+  z-index: 1;
+}
+
+/* 新しい数字の出現 */
+.tile.pop {
+  animation: pop 160ms ease-out;
+}
+
+/* 合体で消えるタイル */
+.tile.merge {
+  animation: merge 150ms ease-in forwards;
+  z-index: 3;
+}
+
+/* 合体したタイル */
+.tile.merged {
+  z-index: 2;
+  animation: merge-glow 320ms ease-out;
+}
+
+/* 数字部分 */
+.tile-number {
+  display: inline-block;
+}
+
+/* 数字のポップ演出 */
+.tile.merged .tile-number {
+  animation: merge-pop 320ms cubic-bezier(.2,.8,.3,1);
+}
+
+/* 新しい数字 */
+@keyframes pop {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+/* 合体で消える */
+@keyframes merge {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* 合体した数字が弾む */
+@keyframes merge-pop {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.4);
+  }
+  65% {
+    transform: scale(0.92);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* 合体時の発光 */
+@keyframes merge-glow {
+  0% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(255,255,255,0);
+  }
+  35% {
+    filter: brightness(1.9);
+    box-shadow:
+      0 0 0 5px rgba(255,255,255,0.28),
+      0 0 18px 5px rgba(255,220,150,0.55);
+  }
+  65% {
+    filter: brightness(1.3);
+    box-shadow:
+      0 0 0 9px rgba(255,255,255,0.12),
+      0 0 12px 3px rgba(255,220,150,0.3);
+  }
+  100% {
+    filter: brightness(1);
+    box-shadow: 0 0 0 0 rgba(255,255,255,0);
+  }
+}
+
+.v2 { background: #64748b; }
+.v4 { background: #a0aec0; color: #1a202c; }
+.v8 { background: #ed8936; }
+.v16 { background: #ed7045; }
+.v32 { background: #e65b4f; }
+.v64 { background: #d9485f; }
+.v128 { background: #805ad5; }
+.v256 { background: #6b46c1; }
+.v512 { background: #4c51bf; }
+.v1024 { background: #d69e2e; color: #1a202c; }
+.v2048 { background: #38a169; }
+.v4096 { background: #0d9488; }
+
+.tile.large {
+  font-size: clamp(15px, 4.5vw, 23px);
+}
+
+.tile.huge {
+  font-size: 15px;
+  background: #0f766e;
+}
+
+.message {
+  min-height: 30px;
+  text-align: center;
+  margin: 16px 0;
+  color: #f6ad55;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+button {
+  font-family: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 13px 6px;
+  border: none;
+  border-radius: 10px;
+  background: #4a5568;
+  color: white;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.control-btn.primary {
+  background: #ed8936;
+  color: #24180e;
+}
+
+.control-btn:active,
+.arrow:active {
+  opacity: 0.8;
+}
+
+.direction {
+  width: 180px;
+  margin: 0 auto 18px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(2, 48px);
+  gap: 5px;
+}
+
+.arrow {
+  border: none;
+  border-radius: 9px;
+  background: #3b4054;
+  color: white;
+  font-size: 22px;
+  font-weight: bold;
+}
+
+.arrow.up {
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.arrow.left {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.arrow.down {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.arrow.right {
+  grid-column: 3;
+  grid-row: 2;
+}
+
+.help {
+  padding: 15px;
+  background: #292d3e;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: #cbd5e0;
+}
+
+.help strong {
+  color: #f6ad55;
+}
+
+@media (max-width: 350px) {
+  .board {
+    padding: 6px;
+  }
+
+  .grid-bg,
+  .tiles-layer {
+    inset: 6px;
+  }
+}
+</style>
+</head>
+
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>1024</h1>
+    <div class="subtitle">NUMBER MERGE PUZZLE</div>
+  </div>
+
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-label">SCORE</div>
+      <div class="stat-value" id="score">0</div>
+    </div>
+    <div class="stat">
+      <div class="stat-label">BEST</div>
+      <div class="stat-value" id="best">0</div>
+    </div>
+  </div>
+
+  <div class="board" id="board">
+    <div class="grid-bg" id="gridBg"></div>
+    <div class="tiles-layer" id="tilesLayer"></div>
+  </div>
+
+  <div class="message" id="message">
+    1024を目指そう！
+  </div>
+
+  <div class="direction">
+    <button class="arrow up" data-dir="up">▲</button>
+    <button class="arrow left" data-dir="left">◀</button>
+    <button class="arrow down" data-dir="down">▼</button>
+    <button class="arrow right" data-dir="right">▶</button>
+  </div>
+
+  <div class="controls">
+    <button class="control-btn primary" id="newGame">
+      NEW GAME
+    </button>
+  </div>
+
+  <div class="help">
+    <strong>遊び方</strong><br>
+    ・盤面を上下左右にスワイプして操作！<br>
+    ・同じ数字がぶつかると合体します。<br>
+    ・2＋2＝4、4＋4＝8、8＋8＝16……<br>
+    ・操作するたびに新しい数字が出現します。<br>
+    ・1024を作った後もゲームは続きます。<br>
+    ・盤面が埋まり、合体もできなくなると終了！
+  </div>
+
+</div>
+
+<script src="../common/home-button.js" defer></script>
+<script>
+"use strict";
+
+const SIZE = 4;
+const ANIMATION_TIME = 210;
+const MERGE_TIME = 320;
+
+const boardElement = document.getElementById("board");
+const gridBg = document.getElementById("gridBg");
+const tilesLayer = document.getElementById("tilesLayer");
+
+const scoreElement = document.getElementById("score");
+const bestElement = document.getElementById("best");
+const messageElement = document.getElementById("message");
+
+let board = [];
+let tiles = [];
+
+let score = 0;
+let best = 0;
+
+let gameOver = false;
+let reached1024 = false;
+let busy = false;
+let tileId = 0;
+
+try {
+  best = Number(localStorage.getItem("1024_best")) || 0;
+} catch (e) {
+  best = 0;
+}
+
+// 背景マスを作成
+function createGrid() {
+  gridBg.innerHTML = "";
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    gridBg.appendChild(cell);
+  }
+}
+
+// タイルのサイズと座標
+function getCellSize() {
+  const width = tilesLayer.clientWidth;
+  const gridStyle = getComputedStyle(gridBg);
+
+  const gap = parseFloat(gridStyle.columnGap) || 8;
+  const size = (width - gap * (SIZE - 1)) / SIZE;
+
+  return { size, gap };
+}
+
+// タイルを指定位置へ配置
+function positionTile(tile, index, animate = true) {
+  const { size, gap } = getCellSize();
+
+  const row = Math.floor(index / SIZE);
+  const col = index % SIZE;
+
+  const x = col * (size + gap);
+  const y = row * (size + gap);
+
+  tile.style.width = size + "px";
+  tile.style.height = size + "px";
+
+  if (!animate) {
+    tile.style.transition = "none";
+  }
+
+  tile.style.transform = `translate(${x}px, ${y}px)`;
+
+  if (!animate) {
+    tile.offsetHeight;
+    tile.style.transition = "";
+  }
+}
+
+// タイルの色・文字を設定
+function setTileStyle(element, value) {
+  element.className = "tile";
+
+  element.style.background = "";
+  element.style.fontSize = "";
+  element.style.color = "";
+
+  if (value <= 4096) {
+    element.classList.add("v" + value);
+  } else {
+    element.classList.add("huge");
+  }
+
+  if (value >= 128) {
+    element.classList.add("large");
+  }
+
+  const number = document.createElement("span");
+  number.className = "tile-number";
+  number.textContent = value;
+
+  element.replaceChildren(number);
+}
+
+// タイルを生成
+function createTile(value, index, pop = false) {
+  const element = document.createElement("div");
+
+  const tile = {
+    id: ++tileId,
+    value,
+    index,
+    element
+  };
+
+  setTileStyle(element, value);
+  positionTile(element, index, false);
+
+  tilesLayer.appendChild(element);
+
+  if (pop) {
+    element.classList.add("pop");
+
+    element.addEventListener("animationend", event => {
+      if (event.target === element && event.animationName === "pop") {
+        element.classList.remove("pop");
+      }
+    });
+  }
+
+  return tile;
+}
+
+// 合体演出を開始
+function playMergeAnimation(element) {
+  element.classList.remove("merged");
+
+  // 同じアニメーションを再実行できるようにする
+  void element.offsetWidth;
+
+  element.classList.add("merged");
+
+  element.addEventListener("animationend", event => {
+    if (
+      event.target === element &&
+      event.animationName === "merge-glow"
+    ) {
+      element.classList.remove("merged");
+    }
+  });
+}
+
+// スコア表示
+function renderStats() {
+  scoreElement.textContent = score.toLocaleString();
+  bestElement.textContent = best.toLocaleString();
+}
+
+// 初期描画
+function renderInitial() {
+  tilesLayer.innerHTML = "";
+  tiles = [];
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    if (board[i] !== 0) {
+      tiles.push(createTile(board[i], i));
+    }
+  }
+
+  renderStats();
+}
+
+// 空きマス
+function getEmptyCells() {
+  const empty = [];
+
+  for (let i = 0; i < SIZE * SIZE; i++) {
+    if (board[i] === 0) {
+      empty.push(i);
+    }
+  }
+
+  return empty;
+}
+
+// 新しい数字を追加
+function spawnTile() {
+  const empty = getEmptyCells();
+
+  if (empty.length === 0) return;
+
+  const index = empty[Math.floor(Math.random() * empty.length)];
+  const value = Math.random() < 0.9 ? 2 : 4;
+
+  board[index] = value;
+
+  const tile = createTile(value, index, true);
+  tiles.push(tile);
+}
+
+// 1列を圧縮・合体
+function mergeLine(sourceTiles) {
+  const result = [];
+  let gained = 0;
+
+  for (let i = 0; i < sourceTiles.length; i++) {
+    const first = sourceTiles[i];
+    const second = sourceTiles[i + 1];
+
+    if (second && first.value === second.value) {
+      const value = first.value * 2;
+
+      result.push({
+        value,
+        sources: [first, second],
+        merged: true
+      });
+
+      gained += value;
+      i++;
+    } else {
+      result.push({
+        value: first.value,
+        sources: [first],
+        merged: false
+      });
+    }
+  }
+
+  return { result, gained };
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// 移動処理
+async function move(direction) {
+  if (gameOver || busy) return;
+
+  const before = board.slice();
+
+  const tileMap = new Map();
+
+  for (const tile of tiles) {
+    tileMap.set(tile.index, tile);
+  }
+
+  const nextBoard = Array(SIZE * SIZE).fill(0);
+  const nextTiles = [];
+  const consumedTiles = [];
+  const mergedTiles = [];
+
+  let gained = 0;
+
+  for (let line = 0; line < SIZE; line++) {
+    const indexes = [];
+
+    for (let n = 0; n < SIZE; n++) {
+      let index;
+
+      if (direction === "left") {
+        index = line * SIZE + n;
+      } else if (direction === "right") {
+        index = line * SIZE + (SIZE - 1 - n);
+      } else if (direction === "up") {
+        index = n * SIZE + line;
+      } else {
+        index = (SIZE - 1 - n) * SIZE + line;
+      }
+
+      indexes.push(index);
+    }
+
+    const sourceTiles = indexes
+      .filter(index => before[index] !== 0)
+      .map(index => tileMap.get(index))
+      .filter(Boolean);
+
+    const merged = mergeLine(sourceTiles);
+    gained += merged.gained;
+
+    for (let n = 0; n < merged.result.length; n++) {
+      const item = merged.result[n];
+      const targetIndex = indexes[n];
+
+      const survivor = item.sources[0];
+
+      const target = {
+        ...survivor,
+        value: item.value,
+        index: targetIndex
+      };
+
+      nextBoard[targetIndex] = item.value;
+      nextTiles.push(target);
+
+      if (item.merged) {
+        const consumed = item.sources[1];
+
+        // 2枚目も同じ合体先へ移動させる
+        consumedTiles.push({
+          tile: consumed,
+          targetIndex
+        });
+
+        // 合体後の数字に更新
+        setTileStyle(survivor.element, item.value);
+
+        mergedTiles.push(survivor.element);
+      }
+    }
+  }
+
+  // 変化がない場合は終了
+  const changed = nextBoard.some(
+    (value, index) => value !== before[index]
+  );
+
+  if (!changed) return;
+
+  busy = true;
+
+  // 残るタイルを移動
+  for (const tile of nextTiles) {
+    positionTile(tile.element, tile.index, true);
+  }
+
+  // 合体する2枚目も合体先へ移動
+  for (const item of consumedTiles) {
+    positionTile(item.tile.element, item.targetIndex, true);
+  }
+
+  // スライドアニメーション完了
+  await sleep(ANIMATION_TIME);
+
+  // 合体で消えるタイルにアニメーション
+  for (const item of consumedTiles) {
+    item.tile.element.classList.add("merge");
+  }
+
+  await sleep(150);
+
+  // 消えるタイルを削除
+  for (const item of consumedTiles) {
+    item.tile.element.remove();
+  }
+
+  // 盤面を確定
+  board = nextBoard;
+  tiles = nextTiles;
+
+  // 合体したタイルを弾ませる
+  for (const element of mergedTiles) {
+    playMergeAnimation(element);
+  }
+
+  if (mergedTiles.length > 0) {
+    await sleep(MERGE_TIME);
+  }
+
+  // スコア更新
+  score += gained;
+
+  if (score > best) {
+    best = score;
+
+    try {
+      localStorage.setItem("1024_best", String(best));
+    } catch (e) {}
+  }
+
+  // 新しい数字を追加
+  spawnTile();
+
+  // 1024達成判定
+  if (!reached1024 && board.includes(1024)) {
+    reached1024 = true;
+    messageElement.textContent =
+      "🎉 1024達成！ まだまだ続けよう！";
+  } else if (reached1024) {
+    messageElement.textContent =
+      "ENDLESS MODE！ さらに大きな数字へ！";
+  } else {
+    messageElement.textContent =
+      "もっと大きな数字を作ろう！";
+  }
+
+  renderStats();
+
+  // ゲームオーバー判定
+  if (isGameOver()) {
+    gameOver = true;
+    messageElement.textContent =
+      "GAME OVER！ スコア：" + score.toLocaleString();
+  }
+
+  busy = false;
+}
+
+// ゲームオーバー判定
+function isGameOver() {
+  if (getEmptyCells().length > 0) {
+    return false;
+  }
+
+  for (let row = 0; row < SIZE; row++) {
+    for (let col = 0; col < SIZE; col++) {
+      const value = board[row * SIZE + col];
+
+      if (
+        col < SIZE - 1 &&
+        value === board[row * SIZE + col + 1]
+      ) {
+        return false;
+      }
+
+      if (
+        row < SIZE - 1 &&
+        value === board[(row + 1) * SIZE + col]
+      ) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// 新しいゲーム
+function newGame() {
+  if (busy) return;
+
+  board = Array(SIZE * SIZE).fill(0);
+  tiles = [];
+
+  score = 0;
+  gameOver = false;
+  reached1024 = false;
+
+  messageElement.textContent = "1024を目指そう！";
+
+  spawnTile();
+  spawnTile();
+
+  renderInitial();
+}
+
+// 方向ボタン
+document.querySelectorAll(".arrow").forEach(button => {
+  button.addEventListener("click", () => {
+    move(button.dataset.dir);
+  });
+});
+
+// NEW GAME
+document.getElementById("newGame").addEventListener(
+  "click",
+  newGame
+);
+
+// スワイプ操作
+let startX = 0;
+let startY = 0;
+let pointerActive = false;
+
+boardElement.addEventListener("pointerdown", event => {
+  startX = event.clientX;
+  startY = event.clientY;
+  pointerActive = true;
+
+  try {
+    boardElement.setPointerCapture(event.pointerId);
+  } catch (e) {}
+});
+
+boardElement.addEventListener("pointerup", event => {
+  if (!pointerActive) return;
+
+  pointerActive = false;
+
+  const dx = event.clientX - startX;
+  const dy = event.clientY - startY;
+
+  if (Math.max(Math.abs(dx), Math.abs(dy)) < 25) {
+    return;
+  }
+
+  if (Math.abs(dx) > Math.abs(dy)) {
+    move(dx > 0 ? "right" : "left");
+  } else {
+    move(dy > 0 ? "down" : "up");
+  }
+});
+
+boardElement.addEventListener("pointercancel", () => {
+  pointerActive = false;
+});
+
+// キーボード操作
+document.addEventListener("keydown", event => {
+  const keys = {
+    ArrowUp: "up",
+    ArrowDown: "down",
+    ArrowLeft: "left",
+    ArrowRight: "right",
+    w: "up",
+    s: "down",
+    a: "left",
+    d: "right"
+  };
+
+  if (keys[event.key]) {
+    event.preventDefault();
+    move(keys[event.key]);
+  }
+});
+
+// 画面サイズ変更
+window.addEventListener("resize", () => {
+  if (busy) return;
+
+  for (const tile of tiles) {
+    positionTile(tile.element, tile.index, false);
+  }
+});
+
+// 起動
+createGrid();
+newGame();
+</script>
+</body>
+</html>

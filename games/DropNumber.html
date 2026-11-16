@@ -1,0 +1,748 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NUMBER DROP 3.1</title>
+
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px 12px;
+  background: #111722;
+  color: white;
+  font-family: system-ui, sans-serif;
+  text-align: center;
+}
+
+.game {
+  max-width: 430px;
+  margin: auto;
+}
+
+h1 {
+  letter-spacing: 4px;
+  margin: 10px 0 25px;
+}
+
+.info {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+  color: #aeb8ca;
+}
+
+.info strong {
+  display: block;
+  font-size: 25px;
+  color: white;
+}
+
+.next {
+  color: #aeb8ca;
+  margin: 15px;
+}
+
+#nextNum {
+  display: inline-block;
+  font-size: 32px;
+  font-weight: bold;
+  color: #ffd166;
+}
+
+.board {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  padding: 8px;
+  background: #252e40;
+  border-radius: 14px;
+  overflow: hidden;
+}
+
+.cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  background: #343e50;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(19px, 6vw, 28px);
+  font-weight: bold;
+  position: relative;
+  overflow: hidden;
+}
+
+.cell.empty {
+  background: #202938;
+}
+
+.v2 { background: #537ca5; }
+.v4 { background: #368f9a; }
+.v8 { background: #47a77d; }
+.v16 { background: #8cae52; color: #172019; }
+.v32 { background: #d5a348; color: #292014; }
+.v64 { background: #d77a45; }
+.v128 { background: #b85d78; }
+.v256 { background: #9866ba; }
+.v512 { background: #705bd1; }
+
+.v1024, .v2048, .v4096, .v8192 {
+  background: #f0cf59;
+  color: #242016;
+}
+
+/* 落下中の数字 */
+.falling-tile {
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 9px;
+  font-weight: bold;
+  font-size: clamp(19px, 6vw, 28px);
+  z-index: 20;
+  pointer-events: none;
+  box-shadow: 0 5px 18px #0008;
+}
+
+/* 着地 */
+.cell.new {
+  animation: landing .3s ease-out;
+}
+
+@keyframes landing {
+  0% { transform: scale(.7); }
+  65% { transform: scale(1.16); }
+  100% { transform: scale(1); }
+}
+
+/* 合体 */
+.cell.merge {
+  animation: merge .35s ease-out;
+  z-index: 2;
+}
+
+@keyframes merge {
+  0% {
+    transform: scale(.65);
+    filter: brightness(2);
+  }
+  60% {
+    transform: scale(1.2);
+    filter: brightness(1.7);
+  }
+  100% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+}
+
+/* 重力落下 */
+.cell.fall {
+  animation: gravityFall .22s ease-in;
+}
+
+@keyframes gravityFall {
+  0% {
+    transform: translateY(-25px);
+    opacity: .5;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.controls {
+  display: flex;
+  gap: 9px;
+  margin-top: 18px;
+}
+
+button {
+  flex: 1;
+  padding: 15px 5px;
+  border: 0;
+  border-radius: 10px;
+  background: #526fe0;
+  color: white;
+  font-size: 15px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:active {
+  transform: scale(.96);
+  opacity: .8;
+}
+
+#message {
+  min-height: 32px;
+  margin-top: 16px;
+  color: #ffd166;
+  font-weight: bold;
+}
+
+#combo {
+  height: 30px;
+  color: #ff9d55;
+  font-weight: bold;
+  font-size: 19px;
+}
+
+.rules {
+  background: #202938;
+  padding: 15px;
+  margin-top: 18px;
+  border-radius: 10px;
+  text-align: left;
+  font-size: 13px;
+  line-height: 1.9;
+  color: #bdc8d9;
+}
+
+.rules strong {
+  color: white;
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+
+<h1>NUMBER DROP</h1>
+
+<div class="info">
+  <div>SCORE<strong id="score">0</strong></div>
+  <div>BEST<strong id="best">0</strong></div>
+</div>
+
+<div class="next">
+  NEXT<br>
+  <span id="nextNum">2</span>
+</div>
+
+<div class="board" id="board"></div>
+
+<div id="message">好きな列をタップ！</div>
+<div id="combo"></div>
+
+<div class="controls">
+  <button id="restart">RESTART</button>
+  <button id="sound">SOUND: ON</button>
+</div>
+
+<div class="rules">
+  <strong>HOW TO PLAY</strong><br>
+  ① 好きな列をタップして数字を落とす<br>
+  ② 数字は上から下へ落下する<br>
+  ③ 同じ数字が上下左右で接触すると合体！<br>
+  ④ 合体すると数字が2倍になる<br>
+  ⑤ 空いた場所には上の数字が落ちてくる<br>
+  ⑥ 連鎖を起こして高得点を目指そう！<br>
+  <br>
+  <strong>GAME OVER</strong><br>
+  盤面がすべて埋まると終了。
+</div>
+
+</div>
+
+<script src="../common/home-button.js" defer></script>
+<script>
+"use strict";
+
+// =================================
+// 基本設定
+// =================================
+
+const SIZE = 5;
+
+let board = [];
+let score = 0;
+let best = 0;
+let next = 2;
+let gameOver = false;
+let busy = false;
+let soundEnabled = true;
+let audio = null;
+
+const boardElement = document.getElementById("board");
+const scoreElement = document.getElementById("score");
+const bestElement = document.getElementById("best");
+const nextElement = document.getElementById("nextNum");
+const messageElement = document.getElementById("message");
+const comboElement = document.getElementById("combo");
+
+// =================================
+// サウンド
+// =================================
+
+function initAudio() {
+  if (!audio) {
+    const AudioContext =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (AudioContext) {
+      audio = new AudioContext();
+    }
+  }
+
+  if (audio && audio.state === "suspended") {
+    audio.resume();
+  }
+}
+
+function playTone(freq, duration, type = "sine", volume = 0.12) {
+  if (!soundEnabled) return;
+
+  initAudio();
+
+  if (!audio) return;
+
+  const osc = audio.createOscillator();
+  const gain = audio.createGain();
+
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, audio.currentTime);
+
+  gain.gain.setValueAtTime(volume, audio.currentTime);
+
+  gain.gain.exponentialRampToValueAtTime(
+    0.001,
+    audio.currentTime + duration
+  );
+
+  osc.connect(gain);
+  gain.connect(audio.destination);
+
+  osc.start();
+  osc.stop(audio.currentTime + duration);
+}
+
+function soundDrop() {
+  playTone(230, 0.15, "triangle", 0.13);
+}
+
+function soundMerge(combo) {
+  playTone(440 + combo * 120, 0.2, "sine", 0.15);
+
+  if (combo >= 2) {
+    setTimeout(() => {
+      playTone(700 + combo * 100, 0.25, "sine", 0.13);
+    }, 100);
+  }
+}
+
+function soundGameOver() {
+  playTone(250, 0.4, "triangle", 0.15);
+
+  setTimeout(() => {
+    playTone(160, 0.5, "triangle", 0.12);
+  }, 200);
+}
+
+// =================================
+// 初期化
+// =================================
+
+function randomNumber() {
+  return Math.random() < 0.75 ? 2 : 4;
+}
+
+function restart() {
+
+  board = Array.from(
+    { length: SIZE },
+    () => Array(SIZE).fill(0)
+  );
+
+  score = 0;
+  gameOver = false;
+  busy = false;
+  next = randomNumber();
+
+  messageElement.textContent = "好きな列をタップ！";
+  comboElement.textContent = "";
+
+  render();
+}
+
+// =================================
+// 描画
+// =================================
+
+function render(effects = {}) {
+
+  boardElement.innerHTML = "";
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+
+      const value = board[r][c];
+      const cell = document.createElement("div");
+
+      cell.className = "cell";
+
+      if (value === 0) {
+        cell.classList.add("empty");
+      } else {
+        cell.classList.add("v" + value);
+        cell.textContent = value;
+      }
+
+      const effect = effects[r + "," + c];
+
+      if (effect) {
+        cell.classList.add(effect);
+      }
+
+      cell.addEventListener("click", () => {
+        drop(c);
+      });
+
+      boardElement.appendChild(cell);
+    }
+  }
+
+  scoreElement.textContent = score;
+  bestElement.textContent = best;
+  nextElement.textContent = next;
+}
+
+// =================================
+// 重力
+// =================================
+
+function applyGravity() {
+
+  const effects = {};
+
+  for (let c = 0; c < SIZE; c++) {
+
+    const values = [];
+
+    for (let r = SIZE - 1; r >= 0; r--) {
+      if (board[r][c] !== 0) {
+        values.push(board[r][c]);
+      }
+    }
+
+    for (let r = 0; r < SIZE; r++) {
+      board[r][c] = 0;
+    }
+
+    for (let i = 0; i < values.length; i++) {
+
+      const r = SIZE - 1 - i;
+
+      board[r][c] = values[i];
+
+      effects[r + "," + c] = "fall";
+    }
+  }
+
+  return effects;
+}
+
+// =================================
+// 合体判定
+// =================================
+
+function findMerge() {
+
+  for (let r = SIZE - 1; r >= 0; r--) {
+    for (let c = 0; c < SIZE; c++) {
+
+      const value = board[r][c];
+
+      if (value === 0) continue;
+
+      const directions = [
+        [1, 0],
+        [0, -1],
+        [0, 1],
+        [-1, 0]
+      ];
+
+      for (const [dr, dc] of directions) {
+
+        const nr = r + dr;
+        const nc = c + dc;
+
+        if (
+          nr >= 0 && nr < SIZE &&
+          nc >= 0 && nc < SIZE &&
+          board[nr][nc] === value
+        ) {
+          return { r, c, nr, nc, value };
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+// =================================
+// 合体と連鎖
+// =================================
+
+async function resolveBoard() {
+
+  let combo = 0;
+
+  while (true) {
+
+    const pair = findMerge();
+
+    if (!pair) break;
+
+    const { r, c, nr, nc, value } = pair;
+
+    board[r][c] = value * 2;
+    board[nr][nc] = 0;
+
+    combo++;
+    score += value * 2;
+
+    comboElement.textContent =
+      combo >= 2 ? combo + " COMBO!" : "";
+
+    soundMerge(combo);
+
+    const effects = {};
+    effects[r + "," + c] = "merge";
+
+    render(effects);
+
+    await wait(280);
+
+    // 空いた場所に重力を適用
+    const gravityEffects = applyGravity();
+
+    render(gravityEffects);
+
+    await wait(220);
+  }
+
+  return combo;
+}
+
+// =================================
+// 上空から数字を落とす
+// =================================
+
+async function animateDrop(col, row, value) {
+
+  // 盤面の実際のサイズを取得
+  const boardRect = boardElement.getBoundingClientRect();
+
+  const cells = boardElement.querySelectorAll(".cell");
+
+  const targetIndex = row * SIZE + col;
+  const targetCell = cells[targetIndex];
+
+  if (!targetCell) return;
+
+  const targetRect = targetCell.getBoundingClientRect();
+
+  const falling = document.createElement("div");
+
+  falling.className = "falling-tile v" + value;
+  falling.textContent = value;
+
+  const width = targetRect.width;
+  const height = targetRect.height;
+
+  // 列の位置を取得
+  const x = targetRect.left - boardRect.left;
+  const y = targetRect.top - boardRect.top;
+
+  falling.style.width = width + "px";
+  falling.style.height = height + "px";
+  falling.style.left = x + "px";
+  falling.style.top = (-height - 5) + "px";
+
+  boardElement.appendChild(falling);
+
+  soundDrop();
+
+  // 描画を確定してからアニメーション
+  falling.getBoundingClientRect();
+
+  const animation = falling.animate(
+    [
+      {
+        transform: "translateY(0)",
+        opacity: 0.3
+      },
+      {
+        transform: `translateY(${y + 8 + height}px)`,
+        opacity: 1,
+        offset: 0.85
+      },
+      {
+        transform: `translateY(${y}px)`,
+        opacity: 1
+      }
+    ],
+    {
+      duration: 430,
+      easing: "cubic-bezier(.2,.75,.35,1)",
+      fill: "forwards"
+    }
+  );
+
+  await animation.finished;
+
+  falling.remove();
+}
+
+// =================================
+// 数字を落とす
+// =================================
+
+async function drop(col) {
+
+  if (gameOver || busy) return;
+
+  initAudio();
+
+  let row = -1;
+
+  for (let r = SIZE - 1; r >= 0; r--) {
+    if (board[r][col] === 0) {
+      row = r;
+      break;
+    }
+  }
+
+  if (row === -1) {
+    messageElement.textContent = "この列は満杯！";
+    playTone(120, 0.1, "square", 0.06);
+    return;
+  }
+
+  busy = true;
+
+  const value = next;
+
+  // 次の数字を決定
+  next = randomNumber();
+  nextElement.textContent = next;
+
+  // 上から落下する演出
+  await animateDrop(col, row, value);
+
+  // 着地
+  board[row][col] = value;
+
+  const effects = {};
+  effects[row + "," + col] = "new";
+
+  render(effects);
+
+  await wait(180);
+
+  // 合体と重力
+  const combo = await resolveBoard();
+
+  if (combo >= 2) {
+    messageElement.textContent =
+      combo + "連鎖！素晴らしい！";
+  } else if (combo === 1) {
+    messageElement.textContent = "合体成功！";
+  } else {
+    messageElement.textContent = "次の数字を落とそう！";
+  }
+
+  if (score > best) {
+    best = score;
+  }
+
+  if (isGameOver()) {
+
+    gameOver = true;
+
+    messageElement.textContent =
+      "GAME OVER！ SCORE: " + score;
+
+    soundGameOver();
+  }
+
+  render();
+
+  busy = false;
+}
+
+// =================================
+// ゲームオーバー
+// =================================
+
+function isGameOver() {
+
+  for (let r = 0; r < SIZE; r++) {
+    for (let c = 0; c < SIZE; c++) {
+
+      if (board[r][c] === 0) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
+// =================================
+// ユーティリティ
+// =================================
+
+function wait(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// =================================
+// ボタン
+// =================================
+
+document.getElementById("restart").addEventListener(
+  "click",
+  restart
+);
+
+document.getElementById("sound").addEventListener(
+  "click",
+  function() {
+
+    soundEnabled = !soundEnabled;
+
+    this.textContent =
+      soundEnabled ? "SOUND: ON" : "SOUND: OFF";
+
+    if (soundEnabled) {
+      initAudio();
+      playTone(600, 0.15);
+    }
+  }
+);
+
+// =================================
+// ゲーム開始
+// =================================
+
+restart();
+
+</script>
+
+</body>
+</html>
