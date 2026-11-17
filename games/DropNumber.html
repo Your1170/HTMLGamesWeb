@@ -6,84 +6,28 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NUMBER DROP 3.1</title>
 
+
 <style>
-* {
-  box-sizing: border-box;
-}
+/* 基本設定 */
+* { box-sizing: border-box; }
+body { margin: 0; padding: 20px 12px; background: #111722; color: white; font-family: system-ui, sans-serif; text-align: center; }
 
-body {
-  margin: 0;
-  padding: 20px 12px;
-  background: #111722;
-  color: white;
-  font-family: system-ui, sans-serif;
-  text-align: center;
-}
+/* ゲーム全体・タイトル */
+.game { max-width: 430px; margin: auto; }
+h1 { letter-spacing: 4px; margin: 10px 0 25px; }
 
-.game {
-  max-width: 430px;
-  margin: auto;
-}
+/* スコア・情報表示 */
+.info { display: flex; justify-content: space-around; margin-bottom: 20px; color: #aeb8ca; }
+.info strong { display: block; font-size: 25px; color: white; }
+.next { color: #aeb8ca; margin: 15px; }
+#nextNum { display: inline-block; font-size: 32px; font-weight: bold; color: #ffd166; }
 
-h1 {
-  letter-spacing: 4px;
-  margin: 10px 0 25px;
-}
+/* ゲーム盤面 */
+.board { position: relative; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 8px; background: #252e40; border-radius: 14px; overflow: hidden; }
+.cell { aspect-ratio: 1; min-width: 0; background: #343e50; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: clamp(19px, 6vw, 28px); font-weight: bold; position: relative; overflow: hidden; }
+.cell.empty { background: #202938; }
 
-.info {
-  display: flex;
-  justify-content: space-around;
-  margin-bottom: 20px;
-  color: #aeb8ca;
-}
-
-.info strong {
-  display: block;
-  font-size: 25px;
-  color: white;
-}
-
-.next {
-  color: #aeb8ca;
-  margin: 15px;
-}
-
-#nextNum {
-  display: inline-block;
-  font-size: 32px;
-  font-weight: bold;
-  color: #ffd166;
-}
-
-.board {
-  position: relative;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-  padding: 8px;
-  background: #252e40;
-  border-radius: 14px;
-  overflow: hidden;
-}
-
-.cell {
-  aspect-ratio: 1;
-  min-width: 0;
-  background: #343e50;
-  border-radius: 9px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(19px, 6vw, 28px);
-  font-weight: bold;
-  position: relative;
-  overflow: hidden;
-}
-
-.cell.empty {
-  background: #202938;
-}
-
+/* 数字ごとのタイルカラー */
 .v2 { background: #537ca5; }
 .v4 { background: #368f9a; }
 .v8 { background: #47a77d; }
@@ -93,126 +37,46 @@ h1 {
 .v128 { background: #b85d78; }
 .v256 { background: #9866ba; }
 .v512 { background: #705bd1; }
-
-.v1024, .v2048, .v4096, .v8192 {
-  background: #f0cf59;
-  color: #242016;
-}
+.v1024, .v2048, .v4096, .v8192 { background: #f0cf59; color: #242016; }
 
 /* 落下中の数字 */
-.falling-tile {
-  position: absolute;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 9px;
-  font-weight: bold;
-  font-size: clamp(19px, 6vw, 28px);
-  z-index: 20;
-  pointer-events: none;
-  box-shadow: 0 5px 18px #0008;
-}
+.falling-tile { position: absolute; display: flex; justify-content: center; align-items: center; border-radius: 9px; font-weight: bold; font-size: clamp(19px, 6vw, 28px); z-index: 20; pointer-events: none; box-shadow: 0 5px 18px #0008; }
 
-/* 着地 */
-.cell.new {
-  animation: landing .3s ease-out;
-}
-
+/* 着地アニメーション */
+.cell.new { animation: landing .3s ease-out; }
 @keyframes landing {
   0% { transform: scale(.7); }
   65% { transform: scale(1.16); }
   100% { transform: scale(1); }
 }
 
-/* 合体 */
-.cell.merge {
-  animation: merge .35s ease-out;
-  z-index: 2;
-}
-
+/* 合体アニメーション */
+.cell.merge { animation: merge .35s ease-out; z-index: 2; }
 @keyframes merge {
-  0% {
-    transform: scale(.65);
-    filter: brightness(2);
-  }
-  60% {
-    transform: scale(1.2);
-    filter: brightness(1.7);
-  }
-  100% {
-    transform: scale(1);
-    filter: brightness(1);
-  }
+  0% { transform: scale(.65); filter: brightness(2); }
+  60% { transform: scale(1.2); filter: brightness(1.7); }
+  100% { transform: scale(1); filter: brightness(1); }
 }
 
-/* 重力落下 */
-.cell.fall {
-  animation: gravityFall .22s ease-in;
-}
-
+/* 重力落下アニメーション */
+.cell.fall { animation: gravityFall .22s ease-in; }
 @keyframes gravityFall {
-  0% {
-    transform: translateY(-25px);
-    opacity: .5;
-  }
-  100% {
-    transform: translateY(0);
-    opacity: 1;
-  }
+  0% { transform: translateY(-25px); opacity: .5; }
+  100% { transform: translateY(0); opacity: 1; }
 }
 
-.controls {
-  display: flex;
-  gap: 9px;
-  margin-top: 18px;
-}
+/* 操作ボタン */
+.controls { display: flex; gap: 9px; margin-top: 18px; }
+button { flex: 1; padding: 15px 5px; border: 0; border-radius: 10px; background: #526fe0; color: white; font-size: 15px; font-weight: bold; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+button:active { transform: scale(.96); opacity: .8; }
 
-button {
-  flex: 1;
-  padding: 15px 5px;
-  border: 0;
-  border-radius: 10px;
-  background: #526fe0;
-  color: white;
-  font-size: 15px;
-  font-weight: bold;
-  cursor: pointer;
-  -webkit-tap-highlight-color: transparent;
-}
+/* メッセージ・コンボ表示 */
+#message { min-height: 32px; margin-top: 16px; color: #ffd166; font-weight: bold; }
+#combo { height: 30px; color: #ff9d55; font-weight: bold; font-size: 19px; }
 
-button:active {
-  transform: scale(.96);
-  opacity: .8;
-}
-
-#message {
-  min-height: 32px;
-  margin-top: 16px;
-  color: #ffd166;
-  font-weight: bold;
-}
-
-#combo {
-  height: 30px;
-  color: #ff9d55;
-  font-weight: bold;
-  font-size: 19px;
-}
-
-.rules {
-  background: #202938;
-  padding: 15px;
-  margin-top: 18px;
-  border-radius: 10px;
-  text-align: left;
-  font-size: 13px;
-  line-height: 1.9;
-  color: #bdc8d9;
-}
-
-.rules strong {
-  color: white;
-}
+/* 遊び方 */
+.rules { background: #202938; padding: 15px; margin-top: 18px; border-radius: 10px; text-align: left; font-size: 13px; line-height: 1.9; color: #bdc8d9; }
+.rules strong { color: white; }
 </style>
 </head>
 

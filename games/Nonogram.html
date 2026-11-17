@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
@@ -6,30 +5,52 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>NONOGRAM - TEAM_1170</title>
 <style>
+/* カラー設定 */
 :root { --bg:#10131c; --panel:#171c28; --panel2:#1d2432; --line:rgba(255,255,255,.09); --text:#f3f5fb; --muted:#9aa4b6; --accent:#7c9cff; --accent2:#a78bfa; --good:#65d6a2; --bad:#ff7185; }
+
+/* 基本設定 */
 * { box-sizing:border-box; }
 body { margin:0; min-height:100vh; padding:24px 14px 50px; color:var(--text); background:linear-gradient(135deg,#10131c,#1b2435); font-family:sans-serif; }
 button,input,select { font:inherit; }
 button { cursor:pointer; }
+
+/* 全体レイアウト・ヘッダー */
 .container { width:100%; max-width:760px; margin:0 auto; }
 header { text-align:center; margin-bottom:24px; }
 header h1 { margin:0; font-size:30px; letter-spacing:3px; }
 header p { margin:8px 0 0; color:var(--muted); font-size:13px; }
+
+/* パネル・説明文 */
 .panel { padding:20px; margin-bottom:16px; background:var(--panel); border:1px solid var(--line); border-radius:16px; }
 h2 { margin:0 0 16px; font-size:18px; }
 h3 { margin:0 0 10px; font-size:15px; }
 .description { color:var(--muted); font-size:13px; line-height:1.8; }
+
+/* 入力フォーム */
 .field { margin:18px 0; }
 .field label { display:block; margin-bottom:8px; color:var(--muted); font-size:13px; }
 input,select { width:100%; padding:12px; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; outline:none; }
 input:focus,select:focus { border-color:var(--accent); }
+
+/* ボタン */
 .primary-button,.sub-button,.mode-button { padding:11px 18px; color:var(--text); background:var(--panel2); border:1px solid var(--line); border-radius:9px; font-weight:bold; transition:.15s; }
 .primary-button { width:100%; padding:14px; color:#10131c; background:var(--accent); border:none; }
 .primary-button:hover { filter:brightness(1.1); }
 .sub-button:hover,.mode-button:hover { border-color:var(--accent); }
 .reset-ranking-button { width:100%; margin-top:12px; color:var(--bad); }
+
+/* サウンド設定 */
+.sound-setting { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:18px; padding:14px; background:var(--panel2); border:1px solid var(--line); border-radius:10px; }
+.sound-setting-label { color:var(--text); font-size:14px; font-weight:bold; }
+.sound-setting-description { margin-top:4px; color:var(--muted); font-size:11px; }
+#soundToggle { min-width:100px; }
+#soundToggle.sound-off { color:var(--muted); }
+
+/* 画面切り替え */
 #startScreen { display:block; }
 #gameScreen { display:none; }
+
+/* ランキング */
 .ranking-section { padding:14px 0; border-top:1px solid var(--line); }
 .ranking-section:first-of-type { padding-top:0; border-top:none; }
 .ranking-section h3 { display:flex; justify-content:space-between; align-items:center; }
@@ -44,12 +65,16 @@ input:focus,select:focus { border-color:var(--accent); }
 .rank-lives { flex:0 0 auto; color:#ff8293; font-size:12px; white-space:nowrap; }
 .rank-hints { color:var(--accent); font-size:11px; }
 .empty-ranking { padding:14px 0; color:var(--muted); font-size:13px; text-align:center; }
+
+/* ゲーム情報 */
 #gameInfo { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
 .info-item { min-width:90px; padding:10px 14px; background:var(--panel); border:1px solid var(--line); border-radius:10px; text-align:center; }
 .info-label { display:block; margin-bottom:4px; color:var(--muted); font-size:11px; }
 .info-value { font-size:19px; font-weight:bold; font-variant-numeric:tabular-nums; }
 #lives { color:#ff8293; letter-spacing:2px; }
 #hintCount { color:var(--accent); }
+
+/* ゲームモード・操作エリア */
 .mode-area { display:flex; justify-content:center; gap:10px; margin:16px 0; }
 .mode-button { min-width:120px; }
 .mode-button.active { color:#10131c; background:var(--accent); border-color:var(--accent); }
@@ -58,6 +83,8 @@ input:focus,select:focus { border-color:var(--accent); }
 #hintButton { min-width:180px; color:#10131c; background:var(--good); border:none; }
 #hintButton:disabled { opacity:.45; cursor:not-allowed; }
 #quitButton { min-width:180px; color:var(--muted); }
+
+/* ゲーム盤面・ヒント配置 */
 .board-scroll { width:100%; overflow-x:auto; padding:8px 2px 14px; }
 .game-layout { --board-size:min(72vw,560px); display:grid; grid-template-columns:max-content var(--board-size); grid-template-rows:max-content var(--board-size); gap:0; width:max-content; max-width:100%; margin:0 auto; }
 .corner { grid-row:1; grid-column:1; }
@@ -65,11 +92,17 @@ input:focus,select:focus { border-color:var(--accent); }
 .col-clue { display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:2px; min-width:0; color:var(--muted); font-size:clamp(9px,2.4vw,13px); font-weight:bold; }
 .row-clues { grid-row:2; grid-column:1; display:grid; grid-template-rows:repeat(var(--count),minmax(0,1fr)); align-items:center; padding-right:8px; }
 .row-clue { display:flex; justify-content:flex-end; align-items:center; gap:5px; min-width:0; color:var(--muted); font-size:clamp(9px,2.4vw,13px); font-weight:bold; white-space:nowrap; }
+
+/* ヒント数字の状態 */
 .clue-number.solved { color:#687386; opacity:.5; }
 .clue-number.tight { color:#a8e6bd; text-shadow:0 0 7px rgba(168,230,189,.2); }
 .clue-number.tight.solved { color:#687386; opacity:.5; text-shadow:none; }
+
+/* ゲーム盤面・マス目 */
 .board { grid-row:2; grid-column:2; display:grid; grid-template-columns:repeat(var(--count),minmax(0,1fr)); grid-template-rows:repeat(var(--count),minmax(0,1fr)); width:var(--board-size); aspect-ratio:1; overflow:hidden; border:2px solid #77839a; border-radius:3px; background:#e7ebf2; }
-.cell { display:flex; justify-content:center; align-items:center; min-width:0; min-height:0; padding:0; color:#172033; background:#e7ebf2; border:0; border-right:1px solid #aeb7c6; border-bottom:1px solid #aeb7c6; font-size:clamp(11px,2.6vw,20px); font-weight:bold; line-height:1; user-select:none; -webkit-tap-highlight-color:transparent; }
+.cell { display:flex; justify-content:center; align-items:center; min-width:0; min-height:0; padding:0; color:#172033; background:#e7ebf2; border:0; border-right:1px solid #aeb7c6; border-bottom:1px solid #aeb7c6; font-size:clamp(11px,2.6vw,20px); font-weight:bold; line-height:1; user-select:none; -webkit-user-select:none; -webkit-tap-highlight-color:transparent; touch-action:none; }
+
+/* マス目の状態 */
 .cell.filled { background:#526b9b; }
 .cell.marked { color:#8b5cf6; background:#dce1ec; }
 .cell.auto-marked { color:#8793a7; background:#dce4e9; cursor:not-allowed; }
@@ -79,27 +112,39 @@ input:focus,select:focus { border-color:var(--accent); }
 .cell.thick-bottom { border-bottom:2px solid #59677e; }
 .cell:active { filter:brightness(.85); }
 .cell.mistake:active,.cell.auto-marked:active { filter:none; }
+
+/* ゲーム説明・メッセージ */
 .game-help { margin:4px 0 0; color:var(--muted); font-size:12px; line-height:1.7; text-align:center; }
 #message { min-height:22px; margin:10px 0; color:var(--muted); font-size:13px; text-align:center; }
+
+/* ゲーム終了画面 */
 #endPanel { display:none; margin-top:18px; padding:18px; background:var(--panel2); border:1px solid var(--line); border-radius:12px; text-align:center; }
 #endTitle { margin:0 0 8px; font-size:23px; }
 #endDescription { margin:0 0 16px; color:var(--muted); font-size:13px; line-height:1.8; }
 .end-buttons { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
+
+/* フッター */
 footer { margin-top:30px; color:var(--muted); font-size:11px; text-align:center; }
-@media (hover:hover) and (pointer:fine) { .mode-area { display:none; } }
+
+/* PC・マウス操作対応 */
+@media (hover:hover) and (pointer:fine) {
+  .mode-area { display:none; }
+}
+
+/* スマートフォン対応 */
 @media (max-width:480px) {
-body { padding:18px 10px 35px; }
-header h1 { font-size:25px; }
-.panel { padding:16px; }
-.info-item { min-width:76px; padding:8px 10px; }
-.info-value { font-size:16px; }
-.game-layout { --board-size:min(72vw,560px); }
-.row-clues { padding-right:5px; }
-.row-clue { gap:3px; }
-.mode-button { min-width:105px; padding:10px; }
-.ranking-list li { gap:7px; }
-.rank-number { flex-basis:25px; }
-.rank-lives { font-size:11px; }
+  body { padding:18px 10px 35px; }
+  header h1 { font-size:25px; }
+  .panel { padding:16px; }
+  .info-item { min-width:76px; padding:8px 10px; }
+  .info-value { font-size:16px; }
+  .game-layout { --board-size:min(72vw,560px); }
+  .row-clues { padding-right:5px; }
+  .row-clue { gap:3px; }
+  .mode-button { min-width:105px; padding:10px; }
+  .ranking-list li { gap:7px; }
+  .rank-number { flex-basis:25px; }
+  .rank-lives { font-size:11px; }
 }
 </style>
 </head>
@@ -122,7 +167,14 @@ header h1 { font-size:25px; }
 <option value="15">15 × 15（上級）</option>
 </select>
 </div>
-<button id="startButton" class="primary-button">ゲームスタート</button>
+<div class="sound-setting">
+<div>
+<div class="sound-setting-label">🔊 効果音（SE）</div>
+<div class="sound-setting-description">ゲーム中の効果音を再生します</div>
+</div>
+<button id="soundToggle" class="sub-button" type="button">🔊 ON</button>
+</div>
+<button id="startButton" class="primary-button" type="button">ゲームスタート</button>
 </div>
 
 <div class="panel">
@@ -130,17 +182,17 @@ header h1 { font-size:25px; }
 <div class="ranking-section">
 <h3>5×5部門 <span class="ranking-size-label">初級</span></h3>
 <ol id="rankingList5" class="ranking-list"></ol>
-<button class="sub-button reset-ranking-button" data-size="5">5×5ランキングをリセット</button>
+<button type="button" class="sub-button reset-ranking-button" data-size="5">5×5ランキングをリセット</button>
 </div>
 <div class="ranking-section">
 <h3>10×10部門 <span class="ranking-size-label">中級</span></h3>
 <ol id="rankingList10" class="ranking-list"></ol>
-<button class="sub-button reset-ranking-button" data-size="10">10×10ランキングをリセット</button>
+<button type="button" class="sub-button reset-ranking-button" data-size="10">10×10ランキングをリセット</button>
 </div>
 <div class="ranking-section">
 <h3>15×15部門 <span class="ranking-size-label">上級</span></h3>
 <ol id="rankingList15" class="ranking-list"></ol>
-<button class="sub-button reset-ranking-button" data-size="15">15×15ランキングをリセット</button>
+<button type="button" class="sub-button reset-ranking-button" data-size="15">15×15ランキングをリセット</button>
 </div>
 </div>
 
@@ -173,16 +225,16 @@ header h1 { font-size:25px; }
 </div>
 
 <div class="mode-area">
-<button id="fillMode" class="mode-button active">■ 塗る</button>
-<button id="xMode" class="mode-button x-mode">× 印を付ける</button>
+<button id="fillMode" class="mode-button active" type="button">■ 塗る</button>
+<button id="xMode" class="mode-button x-mode" type="button">× 印を付ける</button>
 </div>
 
 <div class="action-area">
-<button id="hintButton" class="sub-button">💡 ヒントを使う</button>
+<button id="hintButton" class="sub-button" type="button">💡 ヒントを使う</button>
 </div>
 
 <div class="action-area">
-<button id="quitButton" class="sub-button">タイトルに戻る</button>
+<button id="quitButton" class="sub-button" type="button">タイトルに戻る</button>
 </div>
 
 <div class="board-scroll">
@@ -201,9 +253,9 @@ header h1 { font-size:25px; }
 <h2 id="endTitle">CLEAR!</h2>
 <p id="endDescription"></p>
 <div class="end-buttons">
-<button id="retryButton" class="primary-button" style="width:auto;">同じ問題でもう一度</button>
-<button id="newButton" class="sub-button">新しい問題</button>
-<button id="titleButton" class="sub-button">タイトルへ戻る</button>
+<button id="retryButton" class="primary-button" type="button" style="width:auto;">同じ問題でもう一度</button>
+<button id="newButton" class="sub-button" type="button">新しい問題</button>
+<button id="titleButton" class="sub-button" type="button">タイトルへ戻る</button>
 </div>
 </div>
 </section>
@@ -228,6 +280,128 @@ let elapsed = 0;
 let timerInterval = null;
 let gameActive = false;
 
+// 効果音の設定
+const SOUND_STORAGE_KEY = "team1170_nonogram_sound_v1";
+
+// localStorageが利用できない環境でもゲームを起動できるようにする
+let soundEnabled = true;
+
+try {
+  soundEnabled = window.localStorage.getItem(SOUND_STORAGE_KEY) !== "off";
+} catch (error) {
+  console.warn("SE設定を読み込めませんでした。", error);
+}
+
+let audioContext = null;
+
+function updateSoundButton() {
+  const button = $("soundToggle");
+  if (!button) return;
+
+  button.textContent = soundEnabled ? "🔊 ON" : "🔇 OFF";
+  button.classList.toggle("sound-off", !soundEnabled);
+}
+
+// AudioContextを初期化する
+function getAudioContext() {
+  try {
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return null;
+      audioContext = new AudioContextClass();
+    }
+
+    if (audioContext.state === "suspended") {
+      const resumeResult = audioContext.resume();
+      if (resumeResult && typeof resumeResult.catch === "function") {
+        resumeResult.catch(error => {
+          console.warn("AudioContextを再開できませんでした。", error);
+        });
+      }
+    }
+
+    return audioContext;
+  } catch (error) {
+    console.warn("効果音を再生できませんでした。", error);
+    return null;
+  }
+}
+
+// 指定した音程・長さで音を鳴らす
+function playTone(frequency, start, duration, type = "sine", volume = 0.12) {
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  try {
+    const oscillator = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    oscillator.type = type;
+    oscillator.frequency.setValueAtTime(frequency, start);
+
+    gain.gain.setValueAtTime(0.001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, start + duration);
+
+    oscillator.connect(gain);
+    gain.connect(ctx.destination);
+
+    oscillator.start(start);
+    oscillator.stop(start + duration + 0.02);
+  } catch (error) {
+    console.warn("効果音の生成に失敗しました。", error);
+  }
+}
+
+// 効果音を種類ごとに再生する
+function playSE(name) {
+  if (!soundEnabled) return;
+
+  const ctx = getAudioContext();
+  if (!ctx) return;
+
+  const now = ctx.currentTime;
+
+  switch (name) {
+    case "fill":
+      playTone(660, now, 0.09, "sine", 0.10);
+      playTone(880, now + 0.045, 0.10, "sine", 0.07);
+      break;
+
+    case "mark":
+      playTone(520, now, 0.045, "square", 0.045);
+      break;
+
+    case "mistake":
+      playTone(180, now, 0.16, "sawtooth", 0.10);
+      playTone(130, now + 0.12, 0.20, "sawtooth", 0.09);
+      break;
+
+    case "hint":
+      playTone(660, now, 0.12, "sine", 0.09);
+      playTone(880, now + 0.10, 0.12, "sine", 0.09);
+      playTone(1175, now + 0.20, 0.20, "sine", 0.10);
+      break;
+
+    case "clear":
+      playTone(523.25, now, 0.16, "sine", 0.10);
+      playTone(659.25, now + 0.16, 0.16, "sine", 0.10);
+      playTone(783.99, now + 0.32, 0.16, "sine", 0.10);
+      playTone(1046.5, now + 0.48, 0.35, "sine", 0.12);
+      break;
+
+    case "gameover":
+      playTone(392, now, 0.22, "triangle", 0.10);
+      playTone(329.63, now + 0.22, 0.22, "triangle", 0.10);
+      playTone(261.63, now + 0.44, 0.42, "triangle", 0.11);
+      break;
+
+    case "toggle":
+      playTone(740, now, 0.07, "sine", 0.07);
+      break;
+  }
+}
+
 const RANKING_PREFIX = "team1170_nonogram_ranking_v1_";
 const patternCache = new Map();
 
@@ -249,8 +423,8 @@ function getClues(line) {
 
 function getAllClues(grid) {
   return {
-    rows:grid.map(row => getClues(row)),
-    cols:Array.from({length:grid.length},(_,x) => getClues(grid.map(row => row[x])))
+    rows: grid.map(row => getClues(row)),
+    cols: Array.from({length:grid.length}, (_,x) => getClues(grid.map(row => row[x])))
   };
 }
 
@@ -260,38 +434,38 @@ function makePatterns(n, clues) {
 
   if (clues.length === 1 && clues[0] === 0) {
     const empty = [Array(n).fill(false)];
-    patternCache.set(key,empty);
+    patternCache.set(key, empty);
     return empty;
   }
 
   const patterns = [];
   const totalRuns = clues.length;
 
-  function place(runIndex,start,pattern) {
+  function place(runIndex, start, pattern) {
     if (runIndex === totalRuns) {
       patterns.push(pattern.slice());
       return;
     }
 
-    const remaining = clues.slice(runIndex).reduce((a,b) => a+b,0);
-    const gaps = totalRuns-runIndex-1;
-    const lastStart = n-remaining-gaps;
+    const remaining = clues.slice(runIndex).reduce((a,b) => a+b, 0);
+    const gaps = totalRuns - runIndex - 1;
+    const lastStart = n - remaining - gaps;
 
-    for (let pos=start;pos<=lastStart;pos++) {
+    for (let pos = start; pos <= lastStart; pos++) {
       const next = pattern.slice();
-      for (let i=0;i<clues[runIndex];i++) next[pos+i] = true;
-      place(runIndex+1,pos+clues[runIndex]+1,next);
+      for (let i = 0; i < clues[runIndex]; i++) next[pos+i] = true;
+      place(runIndex+1, pos+clues[runIndex]+1, next);
     }
   }
 
-  place(0,0,Array(n).fill(false));
-  patternCache.set(key,patterns);
+  place(0, 0, Array(n).fill(false));
+  patternCache.set(key, patterns);
   return patterns;
 }
 
-function filterPatterns(patterns,line) {
+function filterPatterns(patterns, line) {
   return patterns.filter(pattern => {
-    for (let i=0;i<line.length;i++) {
+    for (let i = 0; i < line.length; i++) {
       if (line[i] === 1 && !pattern[i]) return false;
       if (line[i] === 0 && pattern[i]) return false;
     }
@@ -299,10 +473,10 @@ function filterPatterns(patterns,line) {
   });
 }
 
-function evaluateLogic(n,rows,cols) {
-  const state = Array.from({length:n},() => Array(n).fill(-1));
-  const rowDomains = rows.map(clue => makePatterns(n,clue));
-  const colDomains = cols.map(clue => makePatterns(n,clue));
+function evaluateLogic(n, rows, cols) {
+  const state = Array.from({length:n}, () => Array(n).fill(-1));
+  const rowDomains = rows.map(clue => makePatterns(n, clue));
+  const colDomains = cols.map(clue => makePatterns(n, clue));
 
   let changed = true;
   let safety = 0;
@@ -314,12 +488,12 @@ function evaluateLogic(n,rows,cols) {
     safety++;
     let newCells = 0;
 
-    for (let y=0;y<n;y++) {
-      const possible = filterPatterns(rowDomains[y],state[y]);
+    for (let y = 0; y < n; y++) {
+      const possible = filterPatterns(rowDomains[y], state[y]);
       if (!possible.length) return {solvable:false};
       rowDomains[y] = possible;
 
-      for (let x=0;x<n;x++) {
+      for (let x = 0; x < n; x++) {
         const value = possible[0][x] ? 1 : 0;
         if (possible.every(p => (p[x] ? 1 : 0) === value) && state[y][x] === -1) {
           state[y][x] = value;
@@ -329,13 +503,13 @@ function evaluateLogic(n,rows,cols) {
       }
     }
 
-    for (let x=0;x<n;x++) {
+    for (let x = 0; x < n; x++) {
       const line = state.map(row => row[x]);
-      const possible = filterPatterns(colDomains[x],line);
+      const possible = filterPatterns(colDomains[x], line);
       if (!possible.length) return {solvable:false};
       colDomains[x] = possible;
 
-      for (let y=0;y<n;y++) {
+      for (let y = 0; y < n; y++) {
         const value = possible[0][y] ? 1 : 0;
         if (possible.every(p => (p[y] ? 1 : 0) === value) && state[y][x] === -1) {
           state[y][x] = value;
@@ -350,17 +524,17 @@ function evaluateLogic(n,rows,cols) {
   }
 
   const solved = state.every(row => row.every(value => value !== -1));
-  return {solvable:solved,initialForced,rounds};
+  return {solvable:solved, initialForced, rounds};
 }
 
-function isTightLine(clue,n) {
+function isTightLine(clue, n) {
   if (clue.length === 1 && clue[0] === 0) return false;
-  const filled = clue.reduce((a,b) => a+b,0);
+  const filled = clue.reduce((a,b) => a+b, 0);
   const requiredGaps = clue.length-1;
-  return filled+requiredGaps === n;
+  return filled + requiredGaps === n;
 }
 
-function isValidLine(line,n) {
+function isValidLine(line, n) {
   const filledCount = line.filter(Boolean).length;
   const clues = getClues(line);
   if (filledCount < 2 || filledCount >= n) return false;
@@ -368,36 +542,36 @@ function isValidLine(line,n) {
   return true;
 }
 
-function countTightLines(rows,cols,n) {
+function countTightLines(rows, cols, n) {
   return rows.filter(c => isTightLine(c,n)).length +
          cols.filter(c => isTightLine(c,n)).length;
 }
 
 // 最大数ぴったりの行・列をConsoleに出力するデバッグ機能
-function debugTightLines(rows,cols,n) {
+function debugTightLines(rows, cols, n) {
   const tightRows = rows
-    .map((clue,index) => ({index:index+1,clue}))
+    .map((clue,index) => ({index:index+1, clue}))
     .filter(item => isTightLine(item.clue,n));
 
   const tightCols = cols
-    .map((clue,index) => ({index:index+1,clue}))
+    .map((clue,index) => ({index:index+1, clue}))
     .filter(item => isTightLine(item.clue,n));
 
   console.groupCollapsed(
     `[NONOGRAM DEBUG] ${n}×${n} / 最大数ぴったり: ${tightRows.length+tightCols.length}箇所`
   );
 
-  console.log("行:",tightRows.length,"箇所");
+  console.log("行:", tightRows.length, "箇所");
   tightRows.forEach(item => {
     console.log(`${item.index}行目: [${item.clue.join(", ")}]`);
   });
 
-  console.log("列:",tightCols.length,"箇所");
+  console.log("列:", tightCols.length, "箇所");
   tightCols.forEach(item => {
     console.log(`${item.index}列目: [${item.clue.join(", ")}]`);
   });
 
-  if (n!==5 && tightRows.length+tightCols.length===0) {
+  if (n !== 5 && tightRows.length+tightCols.length === 0) {
     console.warn("最大数ぴったりの行・列がありません！");
   }
 
@@ -413,22 +587,22 @@ function makeGrid(n) {
   const minInitial = n === 5 ? 1 : n === 10 ? 3 : 5;
   const maxInitial = n === 5 ? 12 : n === 10 ? 35 : 65;
 
-  for (let attempt=0;attempt<maxAttempts;attempt++) {
-    const grid = Array.from({length:n},() =>
-      Array.from({length:n},() => Math.random()<0.48)
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const grid = Array.from({length:n}, () =>
+      Array.from({length:n}, () => Math.random() < 0.48)
     );
 
-    const cols = Array.from({length:n},(_,x) => grid.map(row => row[x]));
+    const cols = Array.from({length:n}, (_,x) => grid.map(row => row[x]));
 
     if (!grid.every(line => isValidLine(line,n))) continue;
     if (!cols.every(line => isValidLine(line,n))) continue;
 
     const clues = getAllClues(grid);
-    const tightCount = countTightLines(clues.rows,clues.cols,n);
+    const tightCount = countTightLines(clues.rows, clues.cols, n);
 
     if (tightCount < minTight) continue;
 
-    const logic = evaluateLogic(n,clues.rows,clues.cols);
+    const logic = evaluateLogic(n, clues.rows, clues.cols);
     if (!logic.solvable) continue;
 
     if (logic.initialForced > maxInitial) continue;
@@ -451,18 +625,18 @@ function makeGrid(n) {
   if (bestGrid) return bestGrid;
 
   // 条件を満たす問題が見つからない場合も、最大数ぴったりの行を含める
-  for (let attempt=0;attempt<3000;attempt++) {
-    const grid = Array.from({length:n},() =>
-      Array.from({length:n},() => Math.random()<0.48)
+  for (let attempt = 0; attempt < 3000; attempt++) {
+    const grid = Array.from({length:n}, () =>
+      Array.from({length:n}, () => Math.random() < 0.48)
     );
 
-    const cols = Array.from({length:n},(_,x) => grid.map(row => row[x]));
+    const cols = Array.from({length:n}, (_,x) => grid.map(row => row[x]));
     if (!grid.every(line => isValidLine(line,n))) continue;
     if (!cols.every(line => isValidLine(line,n))) continue;
 
     const clues = getAllClues(grid);
-    if (n !== 5 && countTightLines(clues.rows,clues.cols,n) < 1) continue;
-    if (evaluateLogic(n,clues.rows,clues.cols).solvable) return grid;
+    if (n !== 5 && countTightLines(clues.rows, clues.cols, n) < 1) continue;
+    if (evaluateLogic(n, clues.rows, clues.cols).solvable) return grid;
   }
 
   // 最終フォールバック：必ず最大数ぴったりの行を含める
@@ -474,10 +648,10 @@ function makeGrid(n) {
     ...Array(secondRun).fill(true)
   ];
 
-  return Array.from({length:n},() => tightPattern.slice());
+  return Array.from({length:n}, () => tightPattern.slice());
 }
 
-function getCurrentLine(isRow,index) {
+function getCurrentLine(isRow, index) {
   return isRow ? cells[index].slice() : cells.map(row => row[index]);
 }
 
@@ -487,26 +661,26 @@ function getCurrentRuns(line) {
 
   for (const value of line) {
     if (value === 1) count++;
-    else if (count>0) {
+    else if (count > 0) {
       result.push(count);
       count = 0;
     }
   }
 
-  if (count>0) result.push(count);
+  if (count > 0) result.push(count);
   return result.length ? result : [0];
 }
 
 function arraysEqual(a,b) {
-  return a.length===b.length && a.every((v,i)=>v===b[i]);
+  return a.length === b.length && a.every((v,i) => v === b[i]);
 }
 
-function lineIsSolved(line,clues) {
-  return arraysEqual(getCurrentRuns(line),clues);
+function lineIsSolved(line, clues) {
+  return arraysEqual(getCurrentRuns(line), clues);
 }
 
 // 正解盤面の塊と照合して、完成した数字だけをグレーアウトする
-function getSolvedRunIndexes(isRow,index,clues) {
+function getSolvedRunIndexes(isRow, index, clues) {
   const solved = new Set();
 
   const targetLine = isRow
@@ -520,7 +694,7 @@ function getSolvedRunIndexes(isRow,index,clues) {
   let clueIndex = 0;
   let position = 0;
 
-  while (position<size && clueIndex<clues.length) {
+  while (position < size && clueIndex < clues.length) {
     if (!targetLine[position]) {
       position++;
       continue;
@@ -528,15 +702,15 @@ function getSolvedRunIndexes(isRow,index,clues) {
 
     const start = position;
 
-    while (position<size && targetLine[position]) {
+    while (position < size && targetLine[position]) {
       position++;
     }
 
     const end = position-1;
     let completed = true;
 
-    for (let i=start;i<=end;i++) {
-      if (currentLine[i]!==1) {
+    for (let i = start; i <= end; i++) {
+      if (currentLine[i] !== 1) {
         completed = false;
         break;
       }
@@ -573,14 +747,14 @@ function startTimer() {
 }
 
 function stopTimer() {
-  if (timerInterval!==null) {
+  if (timerInterval !== null) {
     clearInterval(timerInterval);
     timerInterval = null;
   }
 }
 
 function updateLives() {
-  $("lives").textContent = Array.from({length:5},(_,i)=>i<lives?"♥":"♡").join(" ");
+  $("lives").textContent = Array.from({length:5}, (_,i) => i < lives ? "♥" : "♡").join(" ");
 }
 
 function updateHintCount() {
@@ -589,16 +763,15 @@ function updateHintCount() {
 
 function setMode(nextMode) {
   mode = nextMode;
-  $("fillMode").classList.toggle("active",mode==="fill");
-  $("xMode").classList.toggle("active",mode==="x");
+  $("fillMode").classList.toggle("active", mode === "fill");
+  $("xMode").classList.toggle("active", mode === "x");
 }
 
-function renderClueNumber(container,value,index,clues,n) {
+function renderClueNumber(container, value, index, clues, n) {
   const span = document.createElement("span");
   span.className = "clue-number";
   span.textContent = value;
 
-  // 最大数ぴったりの数字をパステルグリーンで強調
   if (isTightLine(clues,n)) {
     span.classList.add("tight");
   }
@@ -615,9 +788,9 @@ function renderBoard() {
   rowArea.innerHTML = "";
   colArea.innerHTML = "";
 
-  $("gameLayout").style.setProperty("--count",size);
+  $("gameLayout").style.setProperty("--count", size);
 
-  for (let y=0;y<size;y++) {
+  for (let y = 0; y < size; y++) {
     const clue = document.createElement("div");
     clue.className = "row-clue";
 
@@ -628,7 +801,7 @@ function renderBoard() {
     rowArea.appendChild(clue);
   }
 
-  for (let x=0;x<size;x++) {
+  for (let x = 0; x < size; x++) {
     const clue = document.createElement("div");
     clue.className = "col-clue";
 
@@ -639,8 +812,8 @@ function renderBoard() {
     colArea.appendChild(clue);
   }
 
-  for (let y=0;y<size;y++) {
-    for (let x=0;x<size;x++) {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "cell";
@@ -648,8 +821,8 @@ function renderBoard() {
       button.dataset.y = y;
       button.setAttribute("aria-label",`${y+1}行 ${x+1}列`);
 
-      if ((x+1)%5===0 && x!==size-1) button.classList.add("thick-right");
-      if ((y+1)%5===0 && y!==size-1) button.classList.add("thick-bottom");
+      if ((x+1)%5 === 0 && x !== size-1) button.classList.add("thick-right");
+      if ((y+1)%5 === 0 && y !== size-1) button.classList.add("thick-bottom");
 
       board.appendChild(button);
     }
@@ -664,22 +837,22 @@ function autoMarkCompletedLines() {
   while (changed) {
     changed = false;
 
-    for (let y=0;y<size;y++) {
+    for (let y = 0; y < size; y++) {
       if (!lineIsSolved(getCurrentLine(true,y),rowClues[y])) continue;
 
-      for (let x=0;x<size;x++) {
-        if (cells[y][x]===0) {
+      for (let x = 0; x < size; x++) {
+        if (cells[y][x] === 0) {
           cells[y][x] = 4;
           changed = true;
         }
       }
     }
 
-    for (let x=0;x<size;x++) {
+    for (let x = 0; x < size; x++) {
       if (!lineIsSolved(getCurrentLine(false,x),colClues[x])) continue;
 
-      for (let y=0;y<size;y++) {
-        if (cells[y][x]===0) {
+      for (let y = 0; y < size; y++) {
+        if (cells[y][x] === 0) {
           cells[y][x] = 4;
           changed = true;
         }
@@ -692,17 +865,17 @@ function updateBoardDisplay() {
   autoMarkCompletedLines();
   const buttons = $("board").children;
 
-  for (let y=0;y<size;y++) {
-    for (let x=0;x<size;x++) {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
       const button = buttons[y*size+x];
       const value = cells[y][x];
 
-      button.classList.toggle("filled",value===1);
-      button.classList.toggle("marked",value===2);
-      button.classList.toggle("mistake",value===3);
-      button.classList.toggle("auto-marked",value===4);
+      button.classList.toggle("filled",value === 1);
+      button.classList.toggle("marked",value === 2);
+      button.classList.toggle("mistake",value === 3);
+      button.classList.toggle("auto-marked",value === 4);
       button.classList.toggle("hinted",hintedCells[y][x]);
-      button.textContent = value===2 || value===3 || value===4 ? "×" : "";
+      button.textContent = value === 2 || value === 3 || value === 4 ? "×" : "";
     }
   }
 
@@ -713,89 +886,99 @@ function updateClueDisplay() {
   const rowElements = $("rowClues").children;
   const colElements = $("colClues").children;
 
-  for (let y=0;y<size;y++) {
+  for (let y = 0; y < size; y++) {
     const solved = getSolvedRunIndexes(true,y,rowClues[y]);
     const numbers = rowElements[y].children;
 
-    for (let i=0;i<numbers.length;i++) {
+    for (let i = 0; i < numbers.length; i++) {
       numbers[i].classList.toggle("solved",solved.has(i));
     }
   }
 
-  for (let x=0;x<size;x++) {
+  for (let x = 0; x < size; x++) {
     const solved = getSolvedRunIndexes(false,x,colClues[x]);
     const numbers = colElements[x].children;
 
-    for (let i=0;i<numbers.length;i++) {
+    for (let i = 0; i < numbers.length; i++) {
       numbers[i].classList.toggle("solved",solved.has(i));
     }
   }
 }
 
-function startGame(isNewPuzzle=true) {
-  size = Number($("boardSize").value);
+function startGame(isNewPuzzle = true) {
+  try {
+    size = Number($("boardSize").value);
 
-  if (isNewPuzzle) {
-    solution = makeGrid(size);
-    const clues = getAllClues(solution);
-    rowClues = clues.rows;
-    colClues = clues.cols;
+    if (isNewPuzzle) {
+      solution = makeGrid(size);
+      const clues = getAllClues(solution);
+      rowClues = clues.rows;
+      colClues = clues.cols;
 
-    // 問題生成時に最大数ぴったりの行・列をConsoleへ出力
-    debugTightLines(rowClues,colClues,size);
+      debugTightLines(rowClues,colClues,size);
+    }
+
+    cells = Array.from({length:size}, () => Array(size).fill(0));
+    hintedCells = Array.from({length:size}, () => Array(size).fill(false));
+    lives = 5;
+    hintCount = 0;
+    gameActive = true;
+
+    $("sizeLabel").textContent = `${size} × ${size}`;
+    $("message").textContent = "数字のヒントを確認してマスを埋めよう！";
+    $("endPanel").style.display = "none";
+    $("startScreen").style.display = "none";
+    $("gameScreen").style.display = "block";
+    $("hintButton").disabled = false;
+
+    updateLives();
+    updateHintCount();
+    setMode("fill");
+    renderBoard();
+    startTimer();
+
+  } catch (error) {
+    gameActive = false;
+    stopTimer();
+    console.error("ゲームの開始に失敗しました。",error);
+    alert("ゲームを開始できませんでした。ページを再読み込みして、もう一度お試しください。");
   }
-
-  cells = Array.from({length:size},()=>Array(size).fill(0));
-  hintedCells = Array.from({length:size},()=>Array(size).fill(false));
-  lives = 5;
-  hintCount = 0;
-  gameActive = true;
-
-  $("sizeLabel").textContent = `${size} × ${size}`;
-  $("message").textContent = "数字のヒントを確認してマスを埋めよう！";
-  $("endPanel").style.display = "none";
-  $("startScreen").style.display = "none";
-  $("gameScreen").style.display = "block";
-  $("hintButton").disabled = false;
-
-  updateLives();
-  updateHintCount();
-  setMode("fill");
-  renderBoard();
-  startTimer();
 }
 
-function handleCellClick(x,y,action=mode) {
+function handleCellClick(x, y, action = mode) {
   if (!gameActive) return;
 
   const oldValue = cells[y][x];
-  if (oldValue===3 || oldValue===1 || oldValue===4) return;
+  if (oldValue === 3 || oldValue === 1 || oldValue === 4) return;
 
-  if (oldValue===2 && action==="fill") {
+  if (oldValue === 2 && action === "fill") {
     $("message").textContent = "×印を解除してから塗りつぶしてください。";
     return;
   }
 
-  if (action==="x") {
-    cells[y][x] = oldValue===2 ? 0 : 2;
+  if (action === "x") {
+    cells[y][x] = oldValue === 2 ? 0 : 2;
     $("message").textContent = "";
+    playSE("mark");
     updateBoardDisplay();
     return;
   }
 
-  if (solution[y][x]!==true) {
+  if (solution[y][x] !== true) {
     cells[y][x] = 3;
     lives--;
     updateLives();
     $("message").textContent = "そこは間違い！ ライフが1つ減ったよ。";
+    playSE("mistake");
     updateBoardDisplay();
 
-    if (lives<=0) finishGame(false);
+    if (lives <= 0) finishGame(false);
     return;
   }
 
   cells[y][x] = 1;
   $("message").textContent = "";
+  playSE("fill");
   updateBoardDisplay();
 
   if (checkClear()) finishGame(true);
@@ -806,9 +989,9 @@ function useHint() {
 
   const candidates = [];
 
-  for (let y=0;y<size;y++) {
-    for (let x=0;x<size;x++) {
-      if (solution[y][x] && cells[y][x]!==1) {
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      if (solution[y][x] && cells[y][x] !== 1) {
         candidates.push({x,y});
       }
     }
@@ -831,17 +1014,18 @@ function useHint() {
   $("message").textContent =
     `${target.y+1}行 ${target.x+1}列が正解！ ヒントを使用しました。`;
 
+  playSE("hint");
   updateBoardDisplay();
 
   if (checkClear()) finishGame(true);
 }
 
 function checkClear() {
-  for (let y=0;y<size;y++) {
+  for (let y = 0; y < size; y++) {
     if (!lineIsSolved(getCurrentLine(true,y),rowClues[y])) return false;
   }
 
-  for (let x=0;x<size;x++) {
+  for (let x = 0; x < size; x++) {
     if (!lineIsSolved(getCurrentLine(false,x),colClues[x])) return false;
   }
 
@@ -855,6 +1039,7 @@ function finishGame(isClear) {
   $("endPanel").style.display = "block";
 
   if (isClear) {
+    playSE("clear");
     $("endTitle").textContent = "🎉 CLEAR!";
     $("endTitle").style.color = "var(--good)";
     $("endDescription").textContent =
@@ -864,6 +1049,7 @@ function finishGame(isClear) {
       $("endDescription").textContent += " ／ ランキングに登録されたよ！";
     }
   } else {
+    playSE("gameover");
     $("endTitle").textContent = "GAME OVER";
     $("endTitle").style.color = "var(--bad)";
     $("endDescription").textContent =
@@ -875,29 +1061,29 @@ function finishGame(isClear) {
 
 function getRanking(n) {
   try {
-    const data = JSON.parse(localStorage.getItem(RANKING_PREFIX+n)||"[]");
+    const data = JSON.parse(window.localStorage.getItem(RANKING_PREFIX+n) || "[]");
     return Array.isArray(data) ? data : [];
   } catch (error) {
     return [];
   }
 }
 
-function saveRanking(n,time,remainingLives,usedHints) {
+function saveRanking(n, time, remainingLives, usedHints) {
   const ranking = getRanking(n);
-  const entry = {time,date:Date.now(),lives:remainingLives,hints:usedHints};
+  const entry = {time, date:Date.now(), lives:remainingLives, hints:usedHints};
 
   ranking.push(entry);
-  ranking.sort((a,b)=>a.time-b.time);
+  ranking.sort((a,b) => a.time-b.time);
 
   const position = ranking.indexOf(entry);
 
   try {
-    localStorage.setItem(RANKING_PREFIX+n,JSON.stringify(ranking.slice(0,10)));
+    window.localStorage.setItem(RANKING_PREFIX+n,JSON.stringify(ranking.slice(0,10)));
   } catch (error) {
     console.warn("ランキングを保存できませんでした。",error);
   }
 
-  return position>=0 && position<10;
+  return position >= 0 && position < 10;
 }
 
 function renderRanking(n) {
@@ -952,14 +1138,14 @@ function renderRanking(n) {
 }
 
 function renderAllRankings() {
-  [5,10,15].forEach(n=>renderRanking(n));
+  [5,10,15].forEach(n => renderRanking(n));
 }
 
 function resetRanking(n) {
   if (!window.confirm(`${n}×${n}部門のランキングを削除します。よろしいですか？`)) return;
 
   try {
-    localStorage.removeItem(RANKING_PREFIX+n);
+    window.localStorage.removeItem(RANKING_PREFIX+n);
     renderRanking(n);
     window.alert(`${n}×${n}部門のランキングをリセットしました。`);
   } catch (error) {
@@ -985,47 +1171,78 @@ function returnToTitle() {
   window.scrollTo({top:0,behavior:"smooth"});
 }
 
-$("startButton").addEventListener("click",()=>startGame(true));
-$("fillMode").addEventListener("click",()=>setMode("fill"));
-$("xMode").addEventListener("click",()=>setMode("x"));
-$("hintButton").addEventListener("click",useHint);
-$("quitButton").addEventListener("click",returnToTitle);
-$("titleButton").addEventListener("click",returnToTitle);
+// イベント登録
+$("startButton").addEventListener("click", () => startGame(true));
+$("fillMode").addEventListener("click", () => setMode("fill"));
+$("xMode").addEventListener("click", () => setMode("x"));
+$("hintButton").addEventListener("click", useHint);
+$("quitButton").addEventListener("click", returnToTitle);
+$("titleButton").addEventListener("click", returnToTitle);
 
-$("board").addEventListener("pointerdown",event => {
-  if (event.pointerType!=="mouse" || event.button!==0) return;
+// SE ON/OFF切り替え
+$("soundToggle").addEventListener("click", () => {
+  soundEnabled = !soundEnabled;
 
+  try {
+    window.localStorage.setItem(
+      SOUND_STORAGE_KEY,
+      soundEnabled ? "on" : "off"
+    );
+  } catch (error) {
+    console.warn("SE設定を保存できませんでした。",error);
+  }
+
+  updateSoundButton();
+
+  if (soundEnabled) {
+    playSE("toggle");
+  }
+});
+
+// PC・スマホ共通のマス操作
+$("board").addEventListener("pointerdown", event => {
+  const button = event.target.closest(".cell");
+  if (!button) return;
+
+  // 左クリック・タップ以外はここでは処理しない
+  if (event.button !== 0) return;
+
+  // ブラウザ標準のタップ動作や合成クリックを抑制
+  event.preventDefault();
+
+  const x = Number(button.dataset.x);
+  const y = Number(button.dataset.y);
+
+  // PCの左クリックは常に塗る
+  // スマホ・タッチ操作は選択中のモードを使用
+  const action = event.pointerType === "mouse" ? "fill" : mode;
+
+  handleCellClick(x,y,action);
+});
+
+// PCの右クリックは×印
+$("board").addEventListener("contextmenu", event => {
   const button = event.target.closest(".cell");
   if (!button) return;
 
   event.preventDefault();
-  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),"fill");
+
+  handleCellClick(
+    Number(button.dataset.x),
+    Number(button.dataset.y),
+    "x"
+  );
 });
 
-$("board").addEventListener("contextmenu",event => {
-  const button = event.target.closest(".cell");
-  if (!button) return;
-
-  event.preventDefault();
-  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),"x");
-});
-
-$("board").addEventListener("click",event => {
-  if (event.pointerType==="mouse") return;
-
-  const button = event.target.closest(".cell");
-  if (!button) return;
-
-  handleCellClick(Number(button.dataset.x),Number(button.dataset.y),mode);
-});
-
-$("retryButton").addEventListener("click",()=>startGame(false));
-$("newButton").addEventListener("click",()=>startGame(true));
+$("retryButton").addEventListener("click", () => startGame(false));
+$("newButton").addEventListener("click", () => startGame(true));
 
 document.querySelectorAll(".reset-ranking-button").forEach(button => {
-  button.addEventListener("click",()=>resetRanking(Number(button.dataset.size)));
+  button.addEventListener("click", () => resetRanking(Number(button.dataset.size)));
 });
 
+// 初期化
+updateSoundButton();
 renderAllRankings();
 </script>
 </body>
