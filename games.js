@@ -1,6 +1,3 @@
-// ゲームの追加・変更はこの配列を編集してください。
-// href は index.html から見た相対パスです。
-// event はイベント名を直接指定します。イベント一覧への登録は不要です。
 const games = [
 // {
 //     title: "テンプレ",
@@ -14,6 +11,8 @@ const games = [
 //     href: "./games/ファイル.html",
 //     enabled: true
 // },
+// 新しいものほど上の方に追加していく想定
+
 
 {
     title: "スライドパズル",
@@ -61,7 +60,7 @@ const games = [
 },
 {
     title: "喝！Z☆A☆Z☆E☆N",
-    description: "モグラ叩き見たなゲームです。",
+    description: "モグラ叩きみたいなゲームです。",
     author: "RYO",
     addedDate: "2026-11-15",
     genre: "アクション",
