@@ -12,8 +12,17 @@ const games = [
 //     enabled: true
 // },
 // 新しいものほど上の方に追加していく想定
-
-
+{
+    title: "お散歩マッピング",
+    description: "歩いたところをマッピングします。",
+    author: "RYO",
+    addedDate: "2026-11-18",
+    genre: "位置情報ゲーム",
+    icon: "./gameIcons/WalkMap.svg",
+    ai: "ChatGPT",
+    href: "./games/WalkMap.html",
+    enabled: true
+},
 {
     title: "スライドパズル",
     description: "数字のタイルを動かして、正しい順番に並べよう。",
