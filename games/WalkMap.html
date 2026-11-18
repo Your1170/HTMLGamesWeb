@@ -21,16 +21,16 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--paper
 #fog{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:450}
 
 /* 上部UI */
-.topbar{position:absolute;z-index:800;top:12px;left:12px;right:12px;display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
+.topbar{position:absolute;z-index:800;top:max(12px,env(safe-area-inset-top));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;align-items:flex-start;justify-content:space-between;gap:8px;pointer-events:none}
 .brand,.stats,.iconbtn,.bottomnav,.modal{pointer-events:auto}
 .brand{background:var(--panel);border:1px solid var(--line);box-shadow:0 2px 8px #382d2140;padding:8px 12px;border-radius:8px;letter-spacing:2px;font-weight:bold;font-size:13px}
 .stats{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.55;text-align:right;box-shadow:0 2px 8px #382d2140}
 .gpsstatus{font-size:10px;color:#6b5234;margin-top:2px;max-width:170px}
 
 /* 操作ボタン */
-.controls{position:absolute;z-index:800;right:12px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px}
-.iconbtn{width:46px;height:46px;border-radius:9px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:20px;box-shadow:0 2px 8px #382d2140;display:grid;place-items:center;cursor:pointer}
-.sound-icon{width:29px;height:29px;display:block;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.controls{position:absolute;z-index:800;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:auto}
+.iconbtn{width:46px;height:46px;flex:0 0 auto;padding:0;margin:0;border-radius:9px;background:var(--panel);border:1px solid var(--line);color:var(--ink);font-size:20px;line-height:1;box-shadow:0 2px 8px #382d2140;display:grid;place-items:center;cursor:pointer;appearance:none;-webkit-appearance:none}
+.sound-icon{width:29px;height:29px;display:block;margin:auto;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
 .iconbtn.active{background:#6d5335;color:#f1dfbd}
 .iconbtn:disabled{opacity:.38;cursor:not-allowed;box-shadow:none}
 .iconbtn:active,.action:active{transform:scale(.96)}
@@ -40,7 +40,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--paper
 .modebtn.review{background:#6d5335;color:#f1dfbd}
 
 /* 下部ナビゲーション */
-.bottomnav{position:absolute;z-index:800;bottom:12px;left:12px;right:12px;display:flex;gap:7px;justify-content:center}
+.bottomnav{position:absolute;z-index:800;bottom:max(12px,env(safe-area-inset-bottom));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;gap:7px;justify-content:center}
 .action{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 9px;font-family:inherit;font-weight:bold;box-shadow:0 2px 8px #382d2140;cursor:pointer;flex:1;max-width:180px;font-size:13px}
 .action.primary{background:#6d5335;color:#f1dfbd;border-color:#4a3927}
 .hint{position:absolute;z-index:800;bottom:72px;left:50%;transform:translateX(-50%);background:#443626dc;color:#f0dfbf;padding:8px 12px;border-radius:20px;font-size:11px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
@@ -1237,7 +1237,9 @@ function renderLandmarkBook(){
    $("landmarkWrap").classList.remove("show");
 
    if(viewMode!=="review")setViewMode("review");
-   map.setView([lm.lat,lm.lng],Math.max(REVIEW_MIN_ZOOM,Math.min(map.getZoom(),REVIEW_ZOOM)));
+
+   // ズーム倍率を維持したままランドマークの位置へ移動
+   map.panTo([lm.lat,lm.lng],{animate:false});
 
    // 表示範囲更新後に対象マーカーを探す
    setTimeout(()=>{
