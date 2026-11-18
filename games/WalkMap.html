@@ -398,28 +398,35 @@ function beep(kind="discover"){
 ========================= */
 
 function initMap(){
- map=L.map("map",{zoomControl:false,preferCanvas:true})
+  map=L.map("map",{zoomControl:false,preferCanvas:true})
   .setView([35.681236,139.767125],17);
 
- L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  // 茶色い探索マスク専用のレイヤーを作成
+  // 地図の上、マーカーの下に配置する
+  map.createPane("fogPane");
+  map.getPane("fogPane").style.zIndex="450";
+  map.getPane("fogPane").style.pointerEvents="none";
+  map.getPane("fogPane").appendChild(canvas);
+
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
   maxZoom:19,
   attribution:'&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
- }).addTo(map);
+  }).addTo(map);
 
- trackLayer.addTo(map);
- pinLayer.addTo(map);
- landmarkLayer.addTo(map);
+  trackLayer.addTo(map);
+  pinLayer.addTo(map);
+  landmarkLayer.addTo(map);
 
- map.on("move zoom",drawFog);
- map.on("click",e=>openPinModal(null,e.latlng));
+  map.on("move zoom",drawFog);
+  map.on("click",e=>openPinModal(null,e.latlng));
 
- map.whenReady(()=>{
+  map.whenReady(()=>{
   resizeCanvas();
   drawFog();
   renderPins();
   renderLandmarks();
   renderBreadcrumbs();
- });
+  });
 }
 
 function resizeCanvas(){
