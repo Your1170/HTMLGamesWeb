@@ -43,7 +43,7 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--paper
 .bottomnav{position:absolute;z-index:800;bottom:max(12px,env(safe-area-inset-bottom));left:max(12px,env(safe-area-inset-left));right:max(12px,env(safe-area-inset-right));display:flex;gap:7px;justify-content:center}
 .action{background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px 9px;font-family:inherit;font-weight:bold;box-shadow:0 2px 8px #382d2140;cursor:pointer;flex:1;max-width:180px;font-size:13px}
 .action.primary{background:#6d5335;color:#f1dfbd;border-color:#4a3927}
-.hint{position:absolute;z-index:800;bottom:72px;left:50%;transform:translateX(-50%);background:#443626dc;color:#f0dfbf;padding:8px 12px;border-radius:20px;font-size:11px;white-space:nowrap;pointer-events:none;transition:opacity .3s}
+.hint{position:absolute;z-index:800;bottom:72px;left:50%;transform:translateX(-50%);background:#443626dc;color:#f0dfbf;padding:8px 12px;border-radius:20px;font-size:11px;white-space:nowrap;pointer-events:none;transition:opacity .3s;opacity:0}
 
 /* モーダル */
 .modalwrap{position:absolute;inset:0;z-index:1200;background:#241b12a8;display:none;align-items:center;justify-content:center;padding:18px}
@@ -73,10 +73,11 @@ textarea{min-height:85px;resize:vertical}
 .pinrow,.landrow{border-bottom:1px solid #a48b65;padding:10px 0}
 .pinrow small,.landrow small{display:block;margin:5px 0 8px}
 .subtle{font-size:11px;opacity:.75;line-height:1.5}
-.landrow{display:flex;align-items:center;gap:10px}
+.landrow{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #a48b65}
 .landicon{font-size:24px;min-width:32px;text-align:center}
 .landrow .landinfo{flex:1;min-width:0}
-.landrow button{padding:7px 9px;max-width:90px;flex:0 0 auto;font-size:11px}
+.landactions{display:flex;flex-direction:column;gap:4px;flex-shrink:0}
+.landrow .landactions .action{padding:5px 8px;max-width:none;flex:none;font-size:11px;width:auto;min-width:72px}
 .discoverybox{text-align:center;padding:10px 0}
 .discoveryicon{font-size:48px;margin:10px}
 .discoveryname{font-size:20px;font-weight:bold;margin:8px}
@@ -91,6 +92,15 @@ textarea{min-height:85px;resize:vertical}
 #backupWrap{z-index:1600}
 #pasteRestoreWrap{z-index:1800}
 #backupJson{min-height:220px;max-height:45vh;font-family:monospace;font-size:11px;white-space:pre;overflow:auto}
+
+/* パンくず凡例 */
+.breadcrumb-legend{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:8px 0}
+.legend-item{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:10px;text-align:center}
+.legend-dot{width:18px;height:18px;border-radius:50%;border:1.5px solid #6c5437;flex-shrink:0}
+
+/* 仕様説明 */
+.about-text{line-height:1.7;font-size:13px;margin:6px 0 12px}
+.modal h3{font-size:15px;margin:14px 0 6px;border-bottom:1px solid #a48b65;padding-bottom:3px;color:var(--accent)}
 
 /* PC表示 */
 @media(min-width:700px){
@@ -125,6 +135,7 @@ textarea{min-height:85px;resize:vertical}
  <button class="iconbtn" id="zoomIn" title="拡大">＋</button>
  <button class="iconbtn" id="zoomOut" title="縮小">－</button>
  <button class="iconbtn" id="soundBtn" type="button" title="サウンド ON" aria-label="サウンド ON" aria-pressed="true"><svg class="sound-icon" viewBox="0 0 32 32" aria-hidden="true"><path d="M4 12h6l8-7v22l-8-7H4z"/><path d="M22 11c2.2 2.2 2.2 7.8 0 10"/><path d="M25.5 7.5c4.6 4.6 4.6 12.4 0 17"/></svg></button>
+ <button class="iconbtn" id="breadcrumbBtn" title="パンくず表示">軌跡</button>
  <button class="iconbtn" id="settingsBtn" title="データ管理">⚙</button>
 </div>
 
@@ -229,6 +240,19 @@ textarea{min-height:85px;resize:vertical}
     <option value="all">すべて</option>
     <option value="found">発見済み</option>
     <option value="unknown">未発見</option>
+    <option value="favorite">お気に入り</option>
+   </select>
+  </div>
+  <div class="field">
+   <label>カテゴリ</label>
+   <select id="landmarkCategoryFilter">
+    <option value="all">すべて</option>
+    <option value="飲食店">飲食店</option>
+    <option value="買い物">買い物</option>
+    <option value="観光・歴史">観光・歴史</option>
+    <option value="自然・公園">自然・公園</option>
+    <option value="生活・公共施設">生活・公共施設</option>
+    <option value="その他">その他</option>
    </select>
   </div>
   <div id="landmarkList"></div>
@@ -254,6 +278,18 @@ textarea{min-height:85px;resize:vertical}
 <div class="modalwrap" id="settingsWrap">
  <div class="modal">
   <h2>データ管理・設定</h2>
+
+  <div class="field">
+   <label>パンくずマーカーの色段階</label>
+   <div class="breadcrumb-legend">
+    <div class="legend-item"><span class="legend-dot" style="background:#ffffff"></span><span class="legend-label">初回</span></div>
+    <div class="legend-item"><span class="legend-dot" style="background:#bcbcbc"></span><span class="legend-label">再訪<br>2-3回</span></div>
+    <div class="legend-item"><span class="legend-dot" style="background:#e8d45b"></span><span class="legend-label">慣れた道<br>4-7回</span></div>
+    <div class="legend-item"><span class="legend-dot" style="background:#e9924f"></span><span class="legend-label">よく通る道<br>8-15回</span></div>
+    <div class="legend-item"><span class="legend-dot" style="background:#d84c4c"></span><span class="legend-label">常連ルート<br>16回以上</span></div>
+   </div>
+  </div>
+
   <p class="subtle">探索記録とピンはこのブラウザ内に保存されます。定期的にバックアップしてください。</p>
 
   <div class="field">
@@ -272,7 +308,7 @@ textarea{min-height:85px;resize:vertical}
   <div class="field">
    <label for="radiusInput">開拓半径</label>
    <select id="radiusInput">
-    <option value="10">10m</option>
+    <option value="10" selected>10m</option>
     <option value="18">18m（標準）</option>
     <option value="25">25m</option>
     <option value="35">35m</option>
@@ -292,7 +328,29 @@ textarea{min-height:85px;resize:vertical}
    <button class="action" id="resetBtn" style="width:100%;max-width:none">探索データを初期化</button>
   </div>
 
+  <div class="field">
+   <button class="action" id="aboutBtn" style="width:100%;max-width:none">仕様について</button>
+  </div>
+
   <div class="modalactions"><button class="action" id="closeSettings">閉じる</button></div>
+ </div>
+</div>
+
+<!-- 仕様説明 -->
+<div class="modalwrap" id="aboutWrap" style="z-index:1300">
+ <div class="modal">
+  <h2>WALK MAP 仕様について</h2>
+  <h3>データ保存について</h3>
+  <p class="about-text">探索データ（探索範囲・パンくず・ピン・ランドマーク）は<b>ブラウザのlocalStorageに保存</b>されます。サーバーには送信されません。<br>ブラウザのデータ削除や端末変更でデータが消える可能性があります。定期的にJSONバックアップを推奨します。</p>
+  <h3>GPSについて</h3>
+  <p class="about-text">GPS位置情報には誤差があります。建物内・地下・ビル街などでは精度が低下します。実際に歩いた場所と記録がずれることがあります。パンくずマーカーは正確な移動履歴を保証するものではありません。<br>GPS精度が100mを超える場合は記録を一時保留します。</p>
+  <h3>ブラウザについて</h3>
+  <p class="about-text">iOS Safariなどでは、GPS・クリップボード・音声再生などの挙動が異なる場合があります。ブラウザの仕様やOSの制限により一部機能が動作しないことがあります。</p>
+  <h3>外部サービスについて</h3>
+  <p class="about-text">地図タイルに<b>OpenStreetMap</b>を、ランドマーク情報の取得に<b>Overpass API</b>を利用しています。外部サービスの障害や通信状況により、地図・ランドマークが表示されないことがあります。</p>
+  <h3>プライバシーについて</h3>
+  <p class="about-text">パンくずマーカーの表示ON/OFFボタン（軌跡）で、スクリーンショット投稿時の生活圏推測を防ぐことができます。OFFにしても記録は継続され、データは保持されます。</p>
+  <div class="modalactions"><button class="action primary" id="closeAbout">閉じる</button></div>
  </div>
 </div>
 
@@ -313,6 +371,10 @@ const MAP_MAX_ZOOM=19;
 const REVIEW_ZOOM=15;
 const REVIEW_MIN_ZOOM=17;
 const LANDMARK_RADIUS=250;
+const GPS_POOR_THRESHOLD=100;
+const GPS_WARN_THRESHOLD=50;
+const MOVE_SKIP_THRESHOLD=300;
+const MOVE_WARN_THRESHOLD=150;
 
 const TYPES=[
  {id:"surprise",label:"びっくり",emoji:"❗"},
@@ -324,18 +386,21 @@ const TYPES=[
 ];
 
 const fresh=()=>({
- version:4,
+ version:5,
  explored:[],
  pins:[],
  distance:0,
  lastPosition:null,
  sound:true,
- radius:18,
+ radius:10,
  landmarks:[],
  landmarkCells:[],
  discoveredLandmarks:[],
  breadcrumbs:[],
- trackBuffer:0
+ trackBuffer:0,
+ showBreadcrumbs:true,
+ favoriteLandmarks:[],
+ landmarkDiscoveryDates:{}
 });
 
 let data=fresh();
@@ -349,6 +414,17 @@ try{
   if(!Array.isArray(data.discoveredLandmarks))data.discoveredLandmarks=[];
   if(!Array.isArray(data.breadcrumbs))data.breadcrumbs=[];
   if(typeof data.trackBuffer!=="number")data.trackBuffer=0;
+  // v5マイグレーション
+  if(typeof data.showBreadcrumbs!=="boolean")data.showBreadcrumbs=true;
+  if(!Array.isArray(data.favoriteLandmarks))data.favoriteLandmarks=[];
+  if(!data.landmarkDiscoveryDates||typeof data.landmarkDiscoveryDates!=="object"||Array.isArray(data.landmarkDiscoveryDates))data.landmarkDiscoveryDates={};
+  if(!data.version||data.version<5){
+   const now=new Date().toISOString();
+   data.discoveredLandmarks.forEach(id=>{
+    if(!data.landmarkDiscoveryDates[id])data.landmarkDiscoveryDates[id]=now;
+   });
+   data.version=5;
+  }
  }
 }catch{}
 
@@ -358,7 +434,7 @@ let map,watchId=null,gpsActive=false,currentMarker=null,
  pinLayer=L.layerGroup(),trackLayer=L.layerGroup(),
  trackRenderer=null,viewMode="explore",
  fetchingCells=new Set(),lastLandmarkFetch=0,
- fogFrame=null,layerFrame=null;
+ fogFrame=null,layerFrame=null,pinPlacementMode=false;
 
 const $=id=>document.getElementById(id);
 const canvas=$("fog");
@@ -371,6 +447,13 @@ function persist(){
  }catch(e){
   toast("保存容量不足。バックアップ後に整理してください");
  }
+}
+
+function updateBreadcrumbButtonState(){
+ const btn=$("breadcrumbBtn");
+ if(!btn)return;
+ btn.classList.toggle("active",!!data.showBreadcrumbs);
+ btn.title=data.showBreadcrumbs?"パンくず表示 ON":"パンくず表示 OFF";
 }
 
 function updateSoundButton(){
@@ -397,10 +480,11 @@ function stats(){
  $("distanceStat").textContent=`移動 ${data.distance<1000?Math.round(data.distance)+" m":(data.distance/1000).toFixed(2)+" km"}`;
  $("trackStat").textContent=`軌跡 ${data.breadcrumbs.length.toLocaleString()} 点`;
  $("landmarkStat").textContent=`発見 ${data.discoveredLandmarks.length} / ${data.landmarks.length}`;
- $("gpsStatus").textContent=gpsActive?"GPS測位中":"GPS停止中";
+ $("gpsStatus").textContent=gpsActive?`GPS測位中`:"GPS停止中";
  $("gpsBtn").textContent=gpsActive?"GPS停止":"GPS再開";
  $("gpsBtn").classList.toggle("running",gpsActive);
  updateSoundButton();
+ updateBreadcrumbButtonState();
  updateControlStates();
  $("modeBtn").textContent=viewMode==="review"?"確認中":"探索中";
  $("modeBtn").classList.toggle("review",viewMode==="review");
@@ -470,7 +554,12 @@ function initMap(){
  // 描画イベントをまとめて実行する
  map.on("move zoom",scheduleFogDraw);
  map.on("moveend zoomend",scheduleLayerRender);
- map.on("click",e=>openPinModal(null,e.latlng));
+ map.on("click",e=>{
+  if(pinPlacementMode){
+   openPinModal(null,e.latlng);
+   exitPinPlacementMode();
+  }
+ });
 
  map.whenReady(()=>{
   resizeCanvas();
@@ -689,6 +778,11 @@ function findNearbyBreadcrumb(lat,lng){
  return nearest;
 }
 
+function mapMatchBreadcrumb(lat,lng){
+ // TODO: 将来実装予定（道路マップマッチング）
+ return null;
+}
+
 function recordBreadcrumb(lat,lng){
  const nearby=findNearbyBreadcrumb(lat,lng);
 
@@ -698,7 +792,8 @@ function recordBreadcrumb(lat,lng){
  }else{
   data.breadcrumbs.push({
    id:"track_"+Date.now()+"_"+Math.random().toString(36).slice(2,7),
-   lat,lng,count:1,createdAt:Date.now(),lastAt:Date.now()
+   lat,lng,count:1,createdAt:Date.now(),lastAt:Date.now(),
+   correctedLat:null,correctedLng:null,matchConfidence:null
   });
  }
 
@@ -715,14 +810,20 @@ function renderBreadcrumbs(){
 
  trackLayer.clearLayers();
 
+ // 表示設定がOFFなら描画しない
+ if(!data.showBreadcrumbs)return;
+
  const visibleBounds=map.getBounds().pad(.1);
 
  data.breadcrumbs.forEach(p=>{
   if(!visibleBounds.contains([p.lat,p.lng]))return;
 
+  // 補正座標があれば使用、なければ元座標
+  const displayLat=p.correctedLat!=null?p.correctedLat:p.lat;
+  const displayLng=p.correctedLng!=null?p.correctedLng:p.lng;
   const count=p.count||1;
 
-  const marker=L.circleMarker([p.lat,p.lng],{
+  const marker=L.circleMarker([displayLat,displayLng],{
    renderer:trackRenderer,
    radius:4,
    color:count===1?"#806b4d":"#6c5437",
@@ -777,11 +878,13 @@ function gpsPosition(pos){
  let lng=pos.coords.longitude;
  let accuracy=pos.coords.accuracy;
 
- if(accuracy>100){
+ if(accuracy>GPS_POOR_THRESHOLD){
   $("gpsStatus").textContent=`精度低 ±${Math.round(accuracy)}m`;
   toast(`GPS精度が低いため記録を保留（±${Math.round(accuracy)}m）`);
   return;
  }
+
+ $("gpsStatus").textContent=`GPS測位中 ±${Math.round(accuracy)}m`;
 
  let ll=L.latLng(lat,lng);
 
@@ -831,7 +934,18 @@ function gpsPosition(pos){
   let now={lat,lng};
   let d=dist(prev,now);
 
-  if(d>=3&&d<150){
+  if(d>=MOVE_SKIP_THRESHOLD){
+   // 異常な移動距離：記録スキップ、lastPositionのみ更新
+   data.lastPosition={lat,lng,accuracy,at:Date.now()};
+   persist();
+   return;
+  }
+
+  if(d>=MOVE_WARN_THRESHOLD){
+   toast(`移動距離が大きいため確認中（${Math.round(d)}m）`);
+  }
+
+  if(d>=3){
    data.distance+=d;
    explore(lat,lng);
    updateBreadcrumbs(prev,now,d);
@@ -843,7 +957,8 @@ function gpsPosition(pos){
  data.lastPosition={lat,lng,at:Date.now()};
  persist();
 
- checkLandmarkDiscovery(lat,lng);
+ checkLandmarkDiscovery(lat,lng,accuracy);
+ pruneLandmarksOutsideRange(lat,lng,accuracy);
  fetchNearbyLandmarks(lat,lng);
 }
 
@@ -965,6 +1080,18 @@ const SHOP_INFO={
  gift:["🎁","ギフトショップ","土産物や贈答品などを販売する店舗です."]
 };
 
+function getLandmarkCategoryGroup(tags={}){
+ const a=tags.amenity;
+ if(a&&["restaurant","cafe","fast_food","food_court","bar","pub"].includes(a))return "飲食店";
+ if(tags.shop)return "買い物";
+ if(tags.tourism||tags.historic)return "観光・歴史";
+ if(tags.leisure&&["park","playground","garden"].includes(tags.leisure))return "自然・公園";
+ if(tags.natural)return "自然・公園";
+ if(tags.leisure)return "自然・公園";
+ if(a&&["school","university","college","kindergarten","hospital","clinic","doctors","dentist","pharmacy","bank","atm","post_office","police","fire_station","library","community_centre","townhall","place_of_worship","toilets","drinking_water","bus_station","fuel"].includes(a))return "生活・公共施設";
+ return "その他";
+}
+
 function getLandmarkInfo(tags={}){
  const amenity=AMENITY_INFO[tags.amenity];
  if(amenity)return {icon:amenity[0],category:amenity[1],description:amenity[2]};
@@ -1033,6 +1160,7 @@ function normalizeLandmarks(){
    ...lm,
    name:tags["name:ja"]||lm.name||tags.name||"名称不明",
    category:lm.category||info.category,
+   categoryGroup:lm.categoryGroup||getLandmarkCategoryGroup(tags),
    icon:lm.icon||info.icon,
    description:lm.description||tags.description||info.description
   };
@@ -1070,9 +1198,44 @@ out center tags;
 `;
 }
 
-// 約200m前後のセル単位で取得済み範囲を管理
+// 約120m四方のセル単位で取得済み範囲を管理
+// 250mの取得半径に対してセルを細かくし、移動時の取りこぼしを防ぐ
 function cellKey(lat,lng){
- return `${Math.floor(lat*450)},${Math.floor(lng*450)}`;
+ return `v2:${Math.floor(lat*900)},${Math.floor(lng*900)}`;
+}
+
+// 現在地から取得範囲外になった未発見ランドマークを整理する
+function pruneLandmarksOutsideRange(lat,lng,accuracy){
+ // GPS精度が悪いと誤って候補を削除する可能性があるため、その場合は整理しない
+ if(Number.isFinite(accuracy)&&accuracy>GPS_POOR_THRESHOLD)return;
+
+ const origin={lat,lng};
+ const before=data.landmarks.length;
+ const discoveredIds=new Set(data.discoveredLandmarks);
+
+ data.landmarks=data.landmarks.filter(lm=>{
+  const discovered=lm.discovered||discoveredIds.has(lm.id);
+  if(discovered)return true;
+  return dist(origin,{lat:lm.lat,lng:lm.lng})<=LANDMARK_RADIUS;
+ });
+
+ // お気に入りも、候補から除外された未発見ランドマーク分だけ整理する
+ const validIds=new Set(data.landmarks.map(lm=>lm.id));
+ data.favoriteLandmarks=data.favoriteLandmarks.filter(id=>validIds.has(id));
+
+ // 古い取得済みセルを整理し、再訪時には再取得できるようにする
+ data.landmarkCells=data.landmarkCells.filter(key=>{
+  const match=/^v2:(-?\d+),(-?\d+)$/.exec(key);
+  if(!match)return false;
+  const cellLat=(Number(match[1])+.5)/900;
+  const cellLng=(Number(match[2])+.5)/900;
+  return dist(origin,{lat:cellLat,lng:cellLng})<=LANDMARK_RADIUS*2;
+ });
+
+ if(data.landmarks.length!==before){
+  persist();
+  renderLandmarks();
+ }
 }
 
 async function fetchNearbyLandmarks(lat,lng,force=false){
@@ -1113,6 +1276,7 @@ async function fetchNearbyLandmarks(lat,lng,force=false){
     lng:coords.lng,
     tags:el.tags||{},
     category:landmarkCategory(el.tags),
+    categoryGroup:getLandmarkCategoryGroup(el.tags||{}),
     icon:landmarkIcon(el.tags),
     discovered:false,
     fetchedAt:Date.now()
@@ -1121,9 +1285,12 @@ async function fetchNearbyLandmarks(lat,lng,force=false){
 
   if(!data.landmarkCells.includes(key))data.landmarkCells.push(key);
 
+  // 取得中にGPSが進んでいる場合も、最新の現在地を基準に候補を整理する
+  const current=data.lastPosition||{lat,lng};
+  pruneLandmarksOutsideRange(current.lat,current.lng,current.accuracy);
   persist();
   renderLandmarks();
-  checkLandmarkDiscovery(lat,lng);
+  checkLandmarkDiscovery(current.lat,current.lng);
  }catch(e){
   console.warn("ランドマーク取得失敗",e);
   toast("ランドマーク情報を取得できませんでした。通信環境を確認してください");
@@ -1132,7 +1299,10 @@ async function fetchNearbyLandmarks(lat,lng,force=false){
  }
 }
 
-function checkLandmarkDiscovery(lat,lng){
+function checkLandmarkDiscovery(lat,lng,accuracy){
+ // GPS精度が悪い場合は発見判定をスキップ
+ if(accuracy>GPS_WARN_THRESHOLD)return;
+
  let newlyFound=[];
 
  for(const lm of data.landmarks){
@@ -1140,12 +1310,17 @@ function checkLandmarkDiscovery(lat,lng){
 
   const d=dist({lat,lng},{lat:lm.lat,lng:lm.lng});
 
-  if(d<=35){
+  if(d<=25){
    lm.discovered=true;
-   lm.discoveredAt=new Date().toISOString();
+   lm.discoveredAt=lm.discoveredAt||new Date().toISOString();
 
    if(!data.discoveredLandmarks.includes(lm.id)){
     data.discoveredLandmarks.push(lm.id);
+   }
+
+   // 発見日を記録（上書きしない）
+   if(!data.landmarkDiscoveryDates[lm.id]){
+    data.landmarkDiscoveryDates[lm.id]=lm.discoveredAt;
    }
 
    newlyFound.push(lm);
@@ -1184,22 +1359,34 @@ function renderLandmarks(){
   if(!visibleBounds.contains([lm.lat,lm.lng]))return;
 
   const found=lm.discovered;
+  const isFav=data.favoriteLandmarks.includes(lm.id);
   const icon=found?(lm.icon||"📍"):"✦";
+  const favStar=found&&isFav?`<span style="font-size:12px;position:absolute;top:-4px;right:-4px">⭐</span>`:"";
 
   const marker=L.marker([lm.lat,lm.lng],{
    pane:"landmarkPane",
    icon:L.divIcon({
     className:"landmark-marker",
-    html:`<div style="font-size:${found?22:25}px;color:${found?"#6d5335":"#493824"};text-shadow:0 1px 3px #fff9,0 2px 3px #4433;${found?"":"font-weight:bold;"}">${icon}</div>`,
+    html:`<div style="position:relative;display:inline-block;font-size:${found?22:25}px;color:${found?"#6d5335":"#d4af37"};text-shadow:0 1px 3px #fff9,0 2px 3px #4433;${found?"":"font-weight:bold;"}">${icon}${favStar}</div>`,
     iconSize:[28,28],
     iconAnchor:[14,14]
    }),
-   zIndexOffset:found?100:200
+   zIndexOffset:found?(isFav?150:100):200
   }).addTo(landmarkLayer);
 
   const description=lm.description||"地図データに詳しい説明は登録されていません。";
-  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.category||"その他の施設")}</div><div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}</div>`);
+  const discoveryDate=data.landmarkDiscoveryDates[lm.id];
+  const dateStr=discoveryDate?`<div class="small">発見日：${new Date(discoveryDate).toLocaleDateString("ja-JP")}</div>`:"";
+  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.categoryGroup||lm.category||"その他の施設")}</div>${found?dateStr:""}<div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}</div>`);
  });
+}
+
+function toggleFavorite(id){
+ const idx=data.favoriteLandmarks.indexOf(id);
+ if(idx>=0){data.favoriteLandmarks.splice(idx,1);toast("お気に入りを解除しました");}
+ else{data.favoriteLandmarks.push(id);toast("お気に入りに追加しました");beep("pin");}
+ persist();
+ renderLandmarkBook();
 }
 
 function openLandmarkBook(){
@@ -1211,46 +1398,91 @@ function renderLandmarkBook(){
  $("bookCount").textContent=`${data.discoveredLandmarks.length} / ${data.landmarks.length}`;
 
  const filter=$("landmarkFilter").value;
+ const catFilter=$("landmarkCategoryFilter")?$("landmarkCategoryFilter").value:"all";
  const list=$("landmarkList");
 
  list.innerHTML="";
 
- let items=data.landmarks.slice().sort((a,b)=>{
+ let items=data.landmarks.slice();
+
+ // フィルター適用
+ if(filter==="found")items=items.filter(x=>x.discovered);
+ if(filter==="unknown")items=items.filter(x=>!x.discovered);
+ if(filter==="favorite")items=items.filter(x=>data.favoriteLandmarks.includes(x.id));
+ if(catFilter&&catFilter!=="all")items=items.filter(x=>x.categoryGroup===catFilter);
+
+ // ソート：お気に入り > 発見済み > 名前順
+ items.sort((a,b)=>{
+  const aFav=data.favoriteLandmarks.includes(a.id);
+  const bFav=data.favoriteLandmarks.includes(b.id);
+  if(aFav!==bFav)return aFav?-1:1;
   if(a.discovered!==b.discovered)return a.discovered?-1:1;
   return a.name.localeCompare(b.name,"ja");
  });
 
- if(filter==="found")items=items.filter(x=>x.discovered);
- if(filter==="unknown")items=items.filter(x=>!x.discovered);
-
  if(!items.length){
-  list.innerHTML='<p class="subtle">まだランドマークがありません。GPSを開始して周辺を探索してください。</p>';
+  list.innerHTML='<p class="subtle">条件に一致するランドマークがありません。</p>';
   return;
  }
 
  items.forEach(lm=>{
   const div=document.createElement("div");
   div.className="landrow";
-  div.innerHTML=`<div class="landicon">${lm.discovered?(lm.icon||"📍"):"✦"}</div><div class="landinfo"><b>${lm.discovered?esc(lm.name):"？？？"}</b><small>${esc(lm.category||"その他の施設")}${lm.discovered?"":" ・未発見"}</small><small class="subtle">${esc(lm.description||"地図データに詳しい説明は登録されていません。")}</small></div><button class="action">地図で見る</button>`;
 
-  div.querySelector("button").onclick=()=>{
+  const isFav=data.favoriteLandmarks.includes(lm.id);
+  const discoveryDate=data.landmarkDiscoveryDates[lm.id];
+  const dateStr=discoveryDate?new Date(discoveryDate).toLocaleDateString("ja-JP"):"";
+
+  const actionsHTML=`
+   <div class="landactions">
+    ${lm.discovered?`<button class="action fav-btn" data-id="${esc(lm.id)}">${isFav?"★":"☆"}</button>`:""}
+    <button class="action map-btn" data-id="${esc(lm.id)}">地図で見る</button>
+    <button class="action gmap-btn" data-lat="${lm.lat}" data-lng="${lm.lng}">Google Maps</button>
+   </div>`;
+
+  div.innerHTML=`
+   <div class="landicon">${lm.discovered?(lm.icon||"📍"):"✦"}</div>
+   <div class="landinfo">
+    <b>${lm.discovered?esc(lm.name):"？？？"}${isFav&&lm.discovered?" ⭐":""}</b>
+    <small>${esc(lm.categoryGroup||lm.category||"その他")}${lm.discovered?"":" ・未発見"}</small>
+    ${lm.discovered&&dateStr?`<small class="subtle">発見日：${dateStr}</small>`:""}
+    <small class="subtle">${esc(lm.description||"地図データに詳しい説明は登録されていません。")}</small>
+   </div>
+   ${actionsHTML}`;
+
+  // お気に入りボタン
+  const favBtn=div.querySelector(".fav-btn");
+  if(favBtn){
+   favBtn.onclick=e=>{
+    e.stopPropagation();
+    toggleFavorite(lm.id);
+   };
+  }
+
+  // 地図で見るボタン
+  div.querySelector(".map-btn").onclick=()=>{
    $("landmarkWrap").classList.remove("show");
-
    if(viewMode!=="review")setViewMode("review");
-
-   // ズーム倍率を維持したままランドマークの位置へ移動
    map.panTo([lm.lat,lm.lng],{animate:false});
-
-   // 表示範囲更新後に対象マーカーを探す
    setTimeout(()=>{
     const marker=landmarkLayer.getLayers().find(m=>{
      const ll=m.getLatLng();
      return ll.lat===lm.lat&&ll.lng===lm.lng;
     });
-
     if(marker)marker.openPopup();
    },0);
   };
+
+  // Google Mapsボタン
+  const gmapBtn=div.querySelector(".gmap-btn");
+  if(gmapBtn){
+   gmapBtn.onclick=e=>{
+    e.stopPropagation();
+    const lat=parseFloat(gmapBtn.dataset.lat);
+    const lng=parseFloat(gmapBtn.dataset.lng);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,"_blank");
+   };
+  }
 
   list.appendChild(div);
  });
@@ -1344,6 +1576,7 @@ function openPinModal(pin,ll){
 
 function closePinModal(){
  $("pinModalWrap").classList.remove("show");
+ if(pinPlacementMode)exitPinPlacementMode();
 }
 
 $("savePin").onclick=()=>{
@@ -1381,8 +1614,30 @@ $("pinModalWrap").onclick=e=>{
 };
 
 $("addPinBtn").onclick=()=>{
- openPinModal(null,currentMarker?.getLatLng()||map.getCenter());
+ if(pinPlacementMode){exitPinPlacementMode();return;}
+ if(viewMode!=="review"){
+  toast("確認モードで地図をタップしてピンを設置してください");
+  setViewMode("review");
+  return;
+ }
+ enterPinPlacementMode();
 };
+
+function enterPinPlacementMode(){
+ pinPlacementMode=true;
+ $("addPinBtn").textContent="✕ キャンセル";
+ $("addPinBtn").classList.add("primary");
+ $("hint").textContent="地図上の記録したい場所をタップしてください";
+ $("hint").style.opacity="1";
+ beep("ui");
+}
+
+function exitPinPlacementMode(){
+ pinPlacementMode=false;
+ $("addPinBtn").textContent="＋ ピンを記録";
+ $("addPinBtn").classList.remove("primary");
+ $("hint").style.opacity="0";
+}
 
 $("pinsBtn").onclick=()=>{
  let list=$("pinList");
@@ -1461,8 +1716,17 @@ $("soundBtn").onclick=()=>{
  toast(data.sound?"サウンド ON":"サウンド OFF");
 };
 
+$("breadcrumbBtn").onclick=()=>{
+ data.showBreadcrumbs=!data.showBreadcrumbs;
+ persist();
+ renderBreadcrumbs();
+ updateBreadcrumbButtonState();
+ beep("ui");
+ toast(data.showBreadcrumbs?"パンくず表示 ON":"パンくず表示 OFF");
+};
+
 $("settingsBtn").onclick=()=>{
- $("radiusInput").value=String(data.radius||18);
+ $("radiusInput").value=String(data.radius||10);
  updateSoundButton();
  $("backupName").value=defaultBackupName();
  $("settingsWrap").classList.add("show");
@@ -1503,6 +1767,7 @@ $("landmarkWrap").onclick=e=>{
 };
 
 $("landmarkFilter").onchange=renderLandmarkBook;
+$("landmarkCategoryFilter").onchange=renderLandmarkBook;
 
 $("discoveryClose").onclick=()=>{
  $("discoveryWrap").classList.remove("show");
@@ -1639,8 +1904,8 @@ async function copyBackupJSON(){
   console.warn("Copy fallback failed",e);
  }
 
- toast("コピーできません。JSON欄を長押しして手動コピーしてください");
- $("backupStatus").textContent="自動コピーできませんでした。JSON欄を長押しして全選択・コピーしてください。";
+ toast("自動コピーができませんでした。JSON欄をタップして長押し→「すべてを選択」→「コピー」でコピーしてください（iPhoneの場合）");
+ $("backupStatus").textContent="自動コピーができませんでした。JSON欄をタップして長押し→「すべてを選択」→「コピー」でコピーしてください（iPhoneの場合）";
 }
 
 $("copyBackup").onclick=copyBackupJSON;
@@ -1665,7 +1930,7 @@ function validateBackupObject(obj){
   throw Error("WALK MAPのバックアップ形式ではありません（explored / pins がありません）");
  }
 
- if(obj.version!=null&&(!Number.isInteger(obj.version)||obj.version<1||obj.version>4)){
+ if(obj.version!=null&&(!Number.isInteger(obj.version)||obj.version<1||obj.version>5)){
   throw Error("対応していないデータバージョンです");
  }
 
@@ -1762,8 +2027,20 @@ function applyBackupObject(obj){
   landmarkCells:Array.isArray(obj.landmarkCells)?obj.landmarkCells:[],
   discoveredLandmarks:Array.isArray(obj.discoveredLandmarks)?obj.discoveredLandmarks:[],
   breadcrumbs:Array.isArray(obj.breadcrumbs)?obj.breadcrumbs:[],
-  trackBuffer:Number(obj.trackBuffer)||0
+  trackBuffer:Number(obj.trackBuffer)||0,
+  showBreadcrumbs:typeof obj.showBreadcrumbs==="boolean"?obj.showBreadcrumbs:true,
+  favoriteLandmarks:Array.isArray(obj.favoriteLandmarks)?obj.favoriteLandmarks:[],
+  landmarkDiscoveryDates:(obj.landmarkDiscoveryDates&&typeof obj.landmarkDiscoveryDates==="object"&&!Array.isArray(obj.landmarkDiscoveryDates))?obj.landmarkDiscoveryDates:{}
  };
+
+ // v5マイグレーション（バックアップが古い場合）
+ if(!data.version||data.version<5){
+  const now=new Date().toISOString();
+  data.discoveredLandmarks.forEach(id=>{
+   if(!data.landmarkDiscoveryDates[id])data.landmarkDiscoveryDates[id]=now;
+  });
+  data.version=5;
+ }
 
  persist();
  scheduleFogDraw();
@@ -1869,6 +2146,10 @@ $("restoreJson").oninput=()=>{
  $("applyRestore").disabled=true;
 };
 
+$("aboutBtn").onclick=()=>$("aboutWrap").classList.add("show");
+$("closeAbout").onclick=()=>$("aboutWrap").classList.remove("show");
+$("aboutWrap").onclick=e=>{if(e.target===$("aboutWrap"))$("aboutWrap").classList.remove("show");};
+
 $("resetBtn").onclick=()=>{
  if(!confirm("探索記録・ピン・距離・ランドマーク・歩行軌跡をすべて削除します。バックアップはありますか？"))return;
 
@@ -1902,6 +2183,7 @@ normalizeLandmarks();
 initMap();
 setMapInteractionEnabled(false);
 stats();
+updateBreadcrumbButtonState();
 resizeCanvas();
 renderPins();
 renderLandmarks();
