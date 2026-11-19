@@ -634,17 +634,21 @@ function drawFog(){
   }
  }
 
- // 画面内と周辺の探索地点だけを描画
+ // パンくずマーカーの位置だけ霧を晴らす
  const visibleBounds=map.getBounds().pad(.1);
+ const revealRadius=Number(data.radius)||10;
 
  ctx.globalCompositeOperation="destination-out";
 
- for(const p of data.explored){
-  if(!visibleBounds.contains([p.lat,p.lng]))continue;
+ for(const p of data.breadcrumbs){
+  // パンくず表示に補正座標がある場合は、その位置を探索済みにする
+  const revealLat=p.correctedLat!=null?p.correctedLat:p.lat;
+  const revealLng=p.correctedLng!=null?p.correctedLng:p.lng;
+  if(!visibleBounds.contains([revealLat,revealLng]))continue;
 
-  let pt=map.latLngToContainerPoint([p.lat,p.lng]);
-  let mpp=40075016.686*Math.cos(p.lat*Math.PI/180)/(256*Math.pow(2,map.getZoom()));
-  let rad=Math.max(2,p.r/mpp);
+  let pt=map.latLngToContainerPoint([revealLat,revealLng]);
+  let mpp=40075016.686*Math.cos(revealLat*Math.PI/180)/(256*Math.pow(2,map.getZoom()));
+  let rad=Math.max(2,revealRadius/mpp);
 
   let grad=ctx.createRadialGradient(pt.x,pt.y,rad*.78,pt.x,pt.y,rad);
   grad.addColorStop(0,"rgba(0,0,0,1)");
@@ -801,7 +805,8 @@ function recordBreadcrumb(lat,lng){
   data.breadcrumbs=data.breadcrumbs.slice(-TRACK_MAX_POINTS);
  }
 
- // 表示更新はCanvasでまとめて実行
+ // パンくずの追加位置に合わせて霧とマーカーを再描画
+ scheduleFogDraw();
  scheduleLayerRender();
 }
 
@@ -952,6 +957,8 @@ function gpsPosition(pos){
   }
  }else{
   explore(lat,lng);
+  // 初回測位地点にもパンくずを置き、そこから霧を晴らす
+  recordBreadcrumb(lat,lng);
  }
 
  data.lastPosition={lat,lng,at:Date.now()};
