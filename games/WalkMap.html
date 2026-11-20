@@ -27,13 +27,6 @@ html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--paper
 .stats{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:11px;line-height:1.55;text-align:right;box-shadow:0 2px 8px #382d2140}
 .gpsstatus{font-size:10px;color:#6b5234;margin-top:2px;max-width:170px}
 
-/* ランドマーク取得ステータス */
-#landmarkFetchStatus{position:absolute;z-index:790;top:112px;left:max(12px,env(safe-area-inset-left));width:min(290px,calc(100vw - 24px));padding:7px 10px;background:rgba(225,207,171,.96);border:1px solid var(--line);border-radius:8px;box-shadow:0 2px 8px #382d2140;font-size:11px;line-height:1.5;pointer-events:none;overflow-wrap:anywhere}
-#landmarkFetchStatus[data-state="success"]{border-color:#54734b}
-#landmarkFetchStatus[data-state="error"]{border-color:#a34d37}
-#landmarkFetchStatus[data-state="warning"]{border-color:#a17a32}
-#landmarkFetchStatus .status-title{font-weight:bold}
-#landmarkFetchStatus .status-detail{opacity:.82;margin-top:2px}
 
 /* 操作ボタン */
 .controls{position:absolute;z-index:800;right:max(12px,env(safe-area-inset-right));top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;pointer-events:auto}
@@ -69,6 +62,7 @@ textarea{min-height:85px;resize:vertical}
 .modalactions button{flex:1}
 
 /* ピン・ポップアップ */
+.landmark-marker{pointer-events:auto!important;cursor:pointer;touch-action:manipulation}
 .pinpopup{font-family:Georgia,serif;color:#493824;min-width:160px}
 .pinpopup b{font-size:15px}.pinpopup .small{font-size:12px;margin:5px 0}
 .pinpopup button{border:1px solid #8b7554;background:#ddc69e;border-radius:5px;padding:5px 8px;color:#493824;margin-right:4px}
@@ -114,7 +108,6 @@ textarea{min-height:85px;resize:vertical}
 @media(min-width:700px){
  .topbar{top:18px;left:18px;right:auto}
  .stats{margin-left:8px}
- #landmarkFetchStatus{top:76px;left:18px}
  .controls{right:20px}
  .bottomnav{bottom:20px;left:50%;right:auto;transform:translateX(-50%);width:min(600px,90%)}
  .hint{bottom:90px}
@@ -156,7 +149,6 @@ textarea{min-height:85px;resize:vertical}
 
 <div class="hint" id="hint">未踏の地は隠されています。歩いて地図を開拓しよう。</div>
 <div class="toast" id="toast"></div>
-<div id="landmarkFetchStatus" data-state="idle" role="status" aria-live="polite"><div class="status-title" id="landmarkFetchTitle">ランドマーク：GPS待機中</div><div class="status-detail" id="landmarkFetchDetail">GPS位置が確定すると周辺を取得します</div></div>
 
 <!-- 安全確認 -->
 <div class="modalwrap show" id="safetyWrap">
@@ -302,7 +294,7 @@ textarea{min-height:85px;resize:vertical}
    </div>
   </div>
 
-  <p class="subtle">探索記録とピンはこのブラウザ内に保存されます。定期的にバックアップしてください。</p>
+  <p class="subtle">探索記録・ピン・ランドマークはこのブラウザのIndexedDBに保存されます。端末変更やブラウザのデータ削除に備えて、定期的にJSONバックアップを保存してください。</p>
 
   <div class="field">
    <label for="backupName">バックアップファイル名</label>
@@ -353,7 +345,7 @@ textarea{min-height:85px;resize:vertical}
  <div class="modal">
   <h2>WALK MAP 仕様について</h2>
   <h3>データ保存について</h3>
-  <p class="about-text">探索データ（探索範囲・パンくず・ピン・ランドマーク）は<b>ブラウザのlocalStorageに保存</b>されます。サーバーには送信されません。<br>ブラウザのデータ削除や端末変更でデータが消える可能性があります。定期的にJSONバックアップを推奨します。</p>
+  <p class="about-text">探索データ（探索範囲・パンくず・ピン・ランドマーク）は<b>ブラウザのIndexedDBに保存</b>されます。サーバーには送信されません。初回起動時に旧LocalStorageデータを自動移行します。<br>ブラウザのデータ削除や端末変更でデータが消える可能性があります。定期的にJSONバックアップを保存してください。</p>
   <h3>GPSについて</h3>
   <p class="about-text">GPS位置情報には誤差があります。建物内・地下・ビル街などでは精度が低下します。実際に歩いた場所と記録がずれることがあります。パンくずマーカーは正確な移動履歴を保証するものではありません。<br>GPS精度が100mを超える場合は記録を一時保留します。</p>
   <h3>ブラウザについて</h3>
@@ -369,7 +361,7 @@ textarea{min-height:85px;resize:vertical}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="../common/home-button.js" defer></script>
 <script>
-(()=>{"use strict";
+(async()=>{"use strict";
 
 /* =========================
    設定・データ
@@ -416,10 +408,12 @@ const fresh=()=>({
 });
 
 let data=fresh();
+let legacyDataFound=false;
 
 try{
  const raw=JSON.parse(localStorage.getItem(KEY)||"null");
  if(raw&&Array.isArray(raw.explored)&&Array.isArray(raw.pins)){
+  legacyDataFound=true;
   data={...fresh(),...raw};
   if(!Array.isArray(data.landmarks))data.landmarks=[];
   if(!Array.isArray(data.landmarkCells))data.landmarkCells=[];
@@ -446,21 +440,160 @@ let map,watchId=null,gpsActive=false,currentMarker=null,
  pinLayer=L.layerGroup(),trackLayer=L.layerGroup(),
  trackRenderer=null,viewMode="explore",
  fetchingCells=new Set(),lastLandmarkFetch=0,activeLandmarkRequests=new Set(),
- landmarkRequestGeneration=0,hasLandmarkFetchSucceeded=false,hasLandmarkFetchAttempted=false,landmarkRetryTimer=null,landmarkRetryCount=0,landmarkStatusUntil=0,
+ landmarkRequestGeneration=0,hasLandmarkFetchAttempted=false,landmarkThrottleNoticeShown=false,
  fogFrame=null,layerFrame=null,pinPlacementMode=false;
 
 const $=id=>document.getElementById(id);
 const canvas=$("fog");
 const ctx=canvas.getContext("2d");
 
-function persist(){
+/* =========================
+   IndexedDB保存
+========================= */
+
+const DB_NAME="WALK_MAP_DATABASE";
+const DB_VERSION=1;
+const DB_STORE="saves";
+const DB_RECORD_KEY="main";
+let walkMapDB=null;
+let localStorageFallback=false;
+const FALLBACK_MARKER=KEY+"_indexeddb_fallback";
+let persistTimer=null;
+let persistQueue=Promise.resolve();
+
+function openWalkMapDatabase(){
+ return new Promise((resolve,reject)=>{
+  const request=indexedDB.open(DB_NAME,DB_VERSION);
+  request.onupgradeneeded=()=>{
+   const db=request.result;
+   if(!db.objectStoreNames.contains(DB_STORE))db.createObjectStore(DB_STORE,{keyPath:"id"});
+  };
+  request.onsuccess=()=>resolve(request.result);
+  request.onerror=()=>reject(request.error||Error("IndexedDBを開けませんでした"));
+  request.onblocked=()=>reject(Error("IndexedDBの更新がブロックされました"));
+ });
+}
+
+function readDatabaseSave(){
+ return new Promise((resolve,reject)=>{
+  const transaction=walkMapDB.transaction(DB_STORE,"readonly");
+  const request=transaction.objectStore(DB_STORE).get(DB_RECORD_KEY);
+  request.onsuccess=()=>resolve(request.result||null);
+  request.onerror=()=>reject(request.error||Error("保存データを読み込めませんでした"));
+  transaction.onabort=()=>reject(transaction.error||Error("読み込み処理が中断されました"));
+ });
+}
+
+function writeDatabaseSave(snapshot){
+ return new Promise((resolve,reject)=>{
+  if(!walkMapDB)return reject(Error("IndexedDBに接続されていません"));
+  const transaction=walkMapDB.transaction(DB_STORE,"readwrite");
+  transaction.objectStore(DB_STORE).put({id:DB_RECORD_KEY,data:snapshot,savedAt:new Date().toISOString()});
+  transaction.oncomplete=()=>resolve();
+  transaction.onerror=()=>reject(transaction.error||Error("保存に失敗しました"));
+  transaction.onabort=()=>reject(transaction.error||Error("保存処理が中断されました"));
+ });
+}
+
+function normalizeStoredData(raw){
+ const loaded={...fresh(),...raw};
+ if(!Array.isArray(loaded.explored))loaded.explored=[];
+ if(!Array.isArray(loaded.pins))loaded.pins=[];
+ if(!Array.isArray(loaded.landmarks))loaded.landmarks=[];
+ if(!Array.isArray(loaded.landmarkCells))loaded.landmarkCells=[];
+ if(!Array.isArray(loaded.discoveredLandmarks))loaded.discoveredLandmarks=[];
+ if(!Array.isArray(loaded.breadcrumbs))loaded.breadcrumbs=[];
+ if(typeof loaded.trackBuffer!=="number")loaded.trackBuffer=0;
+ if(typeof loaded.showBreadcrumbs!=="boolean")loaded.showBreadcrumbs=true;
+ if(!Array.isArray(loaded.favoriteLandmarks))loaded.favoriteLandmarks=[];
+ if(!loaded.landmarkDiscoveryDates||typeof loaded.landmarkDiscoveryDates!=="object"||Array.isArray(loaded.landmarkDiscoveryDates))loaded.landmarkDiscoveryDates={};
+ if(!loaded.version||loaded.version<5){
+  const now=new Date().toISOString();
+  loaded.discoveredLandmarks.forEach(id=>{if(!loaded.landmarkDiscoveryDates[id])loaded.landmarkDiscoveryDates[id]=now;});
+  loaded.version=5;
+ }
+ return loaded;
+}
+
+async function initializeStorage(){
+ if(!window.indexedDB){
+  console.warn("IndexedDB非対応のためLocalStorageで動作します");
+  return;
+ }
  try{
-  localStorage.setItem(KEY,JSON.stringify(data));
-  stats();
+  walkMapDB=await openWalkMapDatabase();
+  const saved=await readDatabaseSave();
+  const hasFallbackCopy=localStorage.getItem(FALLBACK_MARKER)==="1"&&legacyDataFound;
+  if(hasFallbackCopy){
+   // 直前のIndexedDB障害時にLocalStorageへ退避した最新データを優先する
+   data=normalizeStoredData(data);
+   await writeDatabaseSave(JSON.parse(JSON.stringify(data)));
+  }else if(saved&&saved.data&&Array.isArray(saved.data.explored)&&Array.isArray(saved.data.pins)){
+   data=normalizeStoredData(saved.data);
+  }else{
+   // 初回起動時は既存LocalStorageのデータをIndexedDBへ移行
+   data=normalizeStoredData(data);
+   await writeDatabaseSave(JSON.parse(JSON.stringify(data)));
+  }
+  localStorageFallback=false;
+  // IndexedDBへの保存成功後に旧LocalStorageデータを片付ける
+  try{localStorage.removeItem(KEY);localStorage.removeItem(FALLBACK_MARKER);}catch(e){console.warn("旧LocalStorageデータを削除できませんでした",e);}
+  console.info("WALK MAP: IndexedDBを使用しています");
  }catch(e){
-  toast("保存容量不足。バックアップ後に整理してください");
+  console.error("IndexedDB初期化失敗。LocalStorageへフォールバックします",e);
+  if(walkMapDB){try{walkMapDB.close();}catch{}}
+  walkMapDB=null;
+  localStorageFallback=!!window.indexedDB;
+  toast("IndexedDBを利用できないため、LocalStorageで動作します");
  }
 }
+
+async function persistNow(){
+ if(persistTimer!==null){clearTimeout(persistTimer);persistTimer=null;}
+ let snapshot;
+ try{snapshot=JSON.parse(JSON.stringify(data));}
+ catch(e){toast("データを保存用に変換できませんでした");return;}
+ try{
+  if(walkMapDB){
+   const task=persistQueue.catch(()=>{}).then(()=>writeDatabaseSave(snapshot));
+   persistQueue=task;
+   await task;
+  }else{
+   localStorage.setItem(KEY,JSON.stringify(snapshot));
+  }
+ }catch(e){
+  console.error("IndexedDB保存失敗",e);
+  if(walkMapDB){try{walkMapDB.close();}catch{}}
+  walkMapDB=null;
+  try{
+   localStorage.setItem(KEY,JSON.stringify(snapshot));
+   localStorage.setItem(FALLBACK_MARKER,"1");
+   localStorageFallback=true;
+   toast("IndexedDB保存に失敗したためLocalStorageへ切り替えました");
+  }catch(storageError){toast("保存容量不足。バックアップを作成してください");}
+ }
+ stats();
+}
+
+function persist(){
+ stats();
+ if(walkMapDB){
+  if(persistTimer!==null)clearTimeout(persistTimer);
+  persistTimer=setTimeout(()=>{persistNow();},180);
+  return;
+ }
+ try{
+  localStorage.setItem(KEY,JSON.stringify(data));
+  if(localStorageFallback)localStorage.setItem(FALLBACK_MARKER,"1");
+ }
+ catch(e){toast("保存容量不足。バックアップを作成してください");}
+}
+
+// タブを閉じる・バックグラウンドへ移る直前にも保存を開始する
+window.addEventListener("pagehide",()=>{persistNow();});
+document.addEventListener("visibilitychange",()=>{
+ if(document.visibilityState==="hidden")persistNow();
+});
 
 function updateBreadcrumbButtonState(){
  const btn=$("breadcrumbBtn");
@@ -503,12 +636,12 @@ function stats(){
  $("modeBtn").classList.toggle("review",viewMode==="review");
 }
 
-function toast(m){
+function toast(m,duration=3500){
  let el=$("toast");
  el.textContent=m;
  el.style.display="block";
  clearTimeout(toast.timer);
- toast.timer=setTimeout(()=>el.style.display="none",3500);
+ toast.timer=setTimeout(()=>el.style.display="none",duration);
 }
 
 function beep(kind="discover"){
@@ -983,7 +1116,7 @@ function gpsPosition(pos){
  persist();
 
  checkLandmarkDiscovery(lat,lng,accuracy);
- pruneLandmarksOutsideRange(lat,lng,accuracy);
+ renderLandmarks();
  fetchNearbyLandmarks(lat,lng);
 }
 
@@ -1245,97 +1378,33 @@ function cellKey(lat,lng){
  return `v3:${Math.floor(lat*1800)},${Math.floor(lng*1800)}:${data.breadcrumbs.length}`;
 }
 
-// 現在地から取得範囲外になった未発見ランドマークを整理する
-function pruneLandmarksOutsideRange(lat,lng,accuracy){
- // GPS精度が悪いと誤って候補を削除する可能性があるため、その場合は整理しない
- if(Number.isFinite(accuracy)&&accuracy>GPS_POOR_THRESHOLD)return;
+// ランドマーク情報は削除せず、表示時に距離だけを判定する。
+// 取得済みセルも保持し、再訪時の不要なAPI再取得を抑える。
 
- const origin={lat,lng};
- const before=data.landmarks.length;
- const discoveredIds=new Set(data.discoveredLandmarks);
-
- data.landmarks=data.landmarks.filter(lm=>{
-  const discovered=lm.discovered||discoveredIds.has(lm.id);
-  if(discovered)return true;
-  return dist(origin,{lat:lm.lat,lng:lm.lng})<=LANDMARK_RADIUS||isInsideRevealedArea(lm.lat,lm.lng);
- });
-
- // お気に入りも、候補から除外された未発見ランドマーク分だけ整理する
- const validIds=new Set(data.landmarks.map(lm=>lm.id));
- data.favoriteLandmarks=data.favoriteLandmarks.filter(id=>validIds.has(id));
-
- // 古い取得済みセルを整理し、再訪時には再取得できるようにする
- data.landmarkCells=data.landmarkCells.filter(key=>{
-  const match=/^v3:(-?\d+),(-?\d+):\d+$/.exec(key);
-  if(!match)return false;
-  const cellLat=(Number(match[1])+.5)/1800;
-  const cellLng=(Number(match[2])+.5)/1800;
-  return dist(origin,{lat:cellLat,lng:cellLng})<=LANDMARK_RADIUS*2;
- });
-
- if(data.landmarks.length!==before){
-  persist();
-  renderLandmarks();
- }
+function showLandmarkNotice(message){
+ // 取得状況は常設せず、結果だけトーストで短時間表示する
+ toast(message);
 }
 
-function setLandmarkFetchStatus(state,title,detail=""){
- const panel=$("landmarkFetchStatus");
- if(!panel)return;
- panel.dataset.state=state;
- if(!title.startsWith("8秒制限"))landmarkStatusUntil=0;
- $("landmarkFetchTitle").textContent=title;
- $("landmarkFetchDetail").textContent=detail;
-}
-
-function clearLandmarkRetry(){
- if(landmarkRetryTimer){clearTimeout(landmarkRetryTimer);landmarkRetryTimer=null;}
- landmarkRetryCount=0;
-}
-
-function scheduleLandmarkRetry(lat,lng,errorText,generation){
- if(generation!==landmarkRequestGeneration)return;
- if(landmarkRetryCount>=3){
-  setLandmarkFetchStatus("error","ランドマーク取得失敗：再試行上限","3回再試行しました。通信状態を確認して手動で再取得してください。\n"+errorText);
-  return;
- }
- if(landmarkRetryTimer)clearTimeout(landmarkRetryTimer);
- landmarkRetryCount++;
- const retryNo=landmarkRetryCount;
- setLandmarkFetchStatus("error","ランドマーク取得失敗","全3サーバーで失敗。15秒後に自動再試行します（"+retryNo+"/3）\n"+errorText);
- landmarkRetryTimer=setTimeout(()=>{
-  landmarkRetryTimer=null;
-  if(generation!==landmarkRequestGeneration)return;
-  setLandmarkFetchStatus("warning","ランドマーク再取得中","失敗したエリアを再試行しています（"+retryNo+"/3）");
-  fetchNearbyLandmarks(lat,lng,true,true);
- },15000);
-}
-
-async function fetchNearbyLandmarks(lat,lng,force=false,isAutoRetry=false){
+async function fetchNearbyLandmarks(lat,lng,force=false){
  const key=cellKey(lat,lng);
  const generation=landmarkRequestGeneration;
  const firstFetch=!hasLandmarkFetchAttempted;
- if(!force&&landmarkRetryTimer){
-  setLandmarkFetchStatus("warning","自動再試行を待機中","失敗したエリアを15秒間隔で再取得します");
-  return false;
- }
- if(!force&&data.landmarkCells.includes(key)){
-  setLandmarkFetchStatus("success","このエリアは取得済み","新しいランドマーク取得は不要です");
-  return false;
- }
- if(fetchingCells.has(key)){
-  setLandmarkFetchStatus("warning","ランドマーク取得中","同じエリアの取得処理が進行中のためスキップしました");
-  return false;
- }
+
+ // 取得済み・取得中の同一セルは静かにスキップする
+ if(!force&&data.landmarkCells.includes(key))return false;
+ if(fetchingCells.has(key))return false;
+
  const elapsed=Date.now()-lastLandmarkFetch;
  if(!force&&!firstFetch&&elapsed<8000){
-  const remaining=Math.ceil((8000-elapsed)/1000);
-  landmarkStatusUntil=Date.now()+(8000-elapsed);
-  setLandmarkFetchStatus("warning","8秒制限により取得をスキップ","次の通常取得まで約"+remaining+"秒です");
+  if(!landmarkThrottleNoticeShown){
+   toast("ランドマーク取得の間隔を調整中です",1800);
+   landmarkThrottleNoticeShown=true;
+  }
   return false;
  }
 
- if(force&&!isAutoRetry)clearLandmarkRetry();
+ landmarkThrottleNoticeShown=false;
  fetchingCells.add(key);
  hasLandmarkFetchAttempted=true;
  lastLandmarkFetch=Date.now();
@@ -1348,7 +1417,6 @@ async function fetchNearbyLandmarks(lat,lng,force=false,isAutoRetry=false){
  ];
  const retryDelays=[3000,8000];
  let lastError=null;
- setLandmarkFetchStatus("loading",isAutoRetry?"ランドマーク再取得中":"ランドマーク取得中",firstFetch?"初回取得を優先して開始しました":"Overpassサーバーに接続しています");
 
  try{
   const query=osmQuery(lat,lng);
@@ -1361,7 +1429,6 @@ async function fetchNearbyLandmarks(lat,lng,force=false,isAutoRetry=false){
    let timedOut=false;
    controller.signal.addEventListener("abort",abortRequest,{once:true});
    const timeoutId=setTimeout(()=>{timedOut=true;requestController.abort();},40000);
-   setLandmarkFetchStatus("loading","ランドマーク取得中","サーバー"+(attempt+1)+"/3 に接続しています");
    try{
     const response=await fetch(endpoint,{
      method:"POST",
@@ -1371,12 +1438,12 @@ async function fetchNearbyLandmarks(lat,lng,force=false,isAutoRetry=false){
     });
     if(!response.ok)throw Error("HTTP "+response.status);
     json=await response.json();
+    if(!json||!Array.isArray(json.elements))throw Error("Overpass APIの応答形式が不正です");
     break;
    }catch(error){
     if(controller.signal.aborted)throw Object.assign(new Error("取得がキャンセルされました"),{name:"AbortError"});
     lastError=timedOut?new Error("サーバー応答タイムアウト（40秒）"):error;
     console.warn("ランドマーク取得失敗（"+(attempt+1)+"/"+endpoints.length+"）: "+endpoint,lastError);
-    setLandmarkFetchStatus("warning","ランドマーク取得失敗","サーバー"+(attempt+1)+"/3："+lastError.message);
    }finally{
     clearTimeout(timeoutId);
     controller.signal.removeEventListener("abort",abortRequest);
@@ -1394,37 +1461,36 @@ async function fetchNearbyLandmarks(lat,lng,force=false,isAutoRetry=false){
   if(generation!==landmarkRequestGeneration)return false;
 
   let added=0;
-  for(const el of json.elements||[]){
+  for(const el of json.elements){
    const coords=getLandmarkCoords(el);
    if(!coords||!el.tags?.name)continue;
-   if(!isInsideRevealedArea(coords.lat,coords.lng))continue;
+   // 取得半径内の候補を保存する。
+   // wayの中心点がパンくずから離れているだけで候補ごと捨てない。
    const id=`${el.type}_${el.id}`;
    if(data.landmarks.some(x=>x.id===id))continue;
-   data.landmarks.push({id,name:el.tags.name,lat:coords.lat,lng:coords.lng,tags:el.tags||{},category:landmarkCategory(el.tags),categoryGroup:getLandmarkCategoryGroup(el.tags||{}),icon:landmarkIcon(el.tags),discovered:false,fetchedAt:Date.now()});
+   data.landmarks.push({id,name:el.tags.name,lat:coords.lat,lng:coords.lng,tags:el.tags||{},category:landmarkCategory(el.tags),categoryGroup:getLandmarkCategoryGroup(el.tags||{}),icon:landmarkIcon(el.tags),discovered:false,fetchedAt:Date.now(),sourceLat:lat,sourceLng:lng});
    added++;
   }
   if(generation!==landmarkRequestGeneration)return false;
+
+  // 正常なJSON応答を受け取れたセルだけ取得済みにする
   if(!data.landmarkCells.includes(key))data.landmarkCells.push(key);
-  hasLandmarkFetchSucceeded=true;
-  clearLandmarkRetry();
   const current=data.lastPosition||{lat,lng};
-  pruneLandmarksOutsideRange(current.lat,current.lng,current.accuracy);
   persist();
   renderLandmarks();
   checkLandmarkDiscovery(current.lat,current.lng,current.accuracy);
-  console.info("ランドマーク取得成功："+added+"件追加");
-  setLandmarkFetchStatus("success",added?"ランドマーク取得成功："+added+"件":"ランドマーク取得成功：対象なし", "取得エリアを記録しました。周辺のランドマークを確認できます");
+  console.info("ランドマーク取得成功："+added+"件追加 / API応答"+json.elements.length+"件");
+  if(added>0){
+   showLandmarkNotice("ランドマーク候補を"+added+"件追加しました");
+  }
   return true;
  }catch(e){
   if(e.name==="AbortError"&&generation!==landmarkRequestGeneration)return false;
-  if(e.name==="AbortError"){
-   setLandmarkFetchStatus("warning","ランドマーク取得をキャンセルしました","必要に応じて再取得してください");
-   return false;
-  }
+  if(e.name==="AbortError")return false;
   const reason=e.message||"原因不明の通信エラー";
   console.warn("ランドマーク取得失敗（全サーバー試行後）",e);
-  setLandmarkFetchStatus("error","ランドマーク取得失敗：全3サーバー","原因："+reason);
-  scheduleLandmarkRetry(lat,lng,reason,generation);
+  // 常時再試行せず、通信回復後の次のGPS更新で再取得する
+  showLandmarkNotice("ランドマークを取得できませんでした。通信回復後、GPS更新時に再試行します");
   return false;
  }finally{
   if(generation===landmarkRequestGeneration)fetchingCells.delete(key);
@@ -1487,10 +1553,16 @@ function renderLandmarks(){
 
  // 画面内と周辺のランドマークのみマーカー化
  const visibleBounds=map.getBounds().pad(.15);
+ const currentPosition=data.lastPosition
+  ?{lat:data.lastPosition.lat,lng:data.lastPosition.lng}
+  :null;
 
  data.landmarks.forEach(lm=>{
   if(!visibleBounds.contains([lm.lat,lm.lng]))return;
+  // 現在地から250m以内だけ表示。範囲外でも保存データは残す。
+  if(!currentPosition||dist(currentPosition,{lat:lm.lat,lng:lm.lng})>LANDMARK_RADIUS)return;
 
+  // 未発見・発見済みを問わず、霧の状態に関係なく表示する
   const found=lm.discovered;
   const isFav=data.favoriteLandmarks.includes(lm.id);
   const icon=found?(lm.icon||"📍"):"✦";
@@ -1498,6 +1570,10 @@ function renderLandmarks(){
 
   const marker=L.marker([lm.lat,lm.lng],{
    pane:"landmarkPane",
+   interactive:true,
+   keyboard:true,
+   title:found?lm.name:"未発見のランドマーク（タップして場所を確認）",
+   riseOnHover:true,
    icon:L.divIcon({
     className:"landmark-marker",
     html:`<div style="position:relative;display:inline-block;font-size:${found?22:25}px;color:${found?"#6d5335":"#d4af37"};text-shadow:0 1px 3px #fff9,0 2px 3px #4433;${found?"":"font-weight:bold;"}">${icon}${favStar}</div>`,
@@ -1510,7 +1586,9 @@ function renderLandmarks(){
   const description=lm.description||"地図データに詳しい説明は登録されていません。";
   const discoveryDate=data.landmarkDiscoveryDates[lm.id];
   const dateStr=discoveryDate?`<div class="small">発見日：${new Date(discoveryDate).toLocaleDateString("ja-JP")}</div>`:"";
-  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.categoryGroup||lm.category||"その他の施設")}</div>${found?dateStr:""}<div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}<div style="margin-top:7px"><button type="button" onclick="window.walkLandmarkFavorite('${esc(lm.id)}')">${isFav?"★ お気に入り解除":"☆ お気に入り"}</button><button type="button" onclick="window.walkLandmarkGoogleMap(${lm.lat},${lm.lng})">Google Maps</button></div></div>`);
+  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.categoryGroup||lm.category||"その他の施設")}</div>${found?dateStr:""}<div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}<div style="margin-top:7px">${found?`<button type="button" onclick="window.walkLandmarkFavorite('${esc(lm.id)}')">${isFav?"★ お気に入り解除":"☆ お気に入り"}</button>`:""}<button type="button" onclick="window.walkLandmarkGoogleMap(${lm.lat},${lm.lng})">Googleマップで場所を確認</button></div></div>`);
+  // 未発見でもマーカーのタップでポップアップを確実に表示する
+  marker.on("click",()=>marker.openPopup());
  });
 }
 
@@ -1930,9 +2008,7 @@ $("refreshLandmarks").onclick=async()=>{
 
  let ll=currentMarker.getLatLng();
  toast("周辺ランドマークを再取得しています…");
- const success=await fetchNearbyLandmarks(ll.lat,ll.lng,true);
- if(success)toast("周辺ランドマークの取得が完了しました");
- else toast("取得できませんでした。通信回復後、GPS更新時に再試行します");
+ await fetchNearbyLandmarks(ll.lat,ll.lng,true);
 };
 
 /* =========================
@@ -1961,6 +2037,7 @@ function safeFilename(name){
 }
 
 async function exportBackup(){
+ await persistNow();
  const filename=safeFilename($("backupName").value);
  $("backupName").value=filename;
 
@@ -2166,7 +2243,7 @@ function validateBackupObject(obj){
  return true;
 }
 
-function applyBackupObject(obj){
+async function applyBackupObject(obj){
  validateBackupObject(obj);
 
  data={
@@ -2193,7 +2270,7 @@ function applyBackupObject(obj){
   data.version=5;
  }
 
- persist();
+ await persistNow();
  scheduleFogDraw();
  renderPins();
  renderLandmarks();
@@ -2201,11 +2278,11 @@ function applyBackupObject(obj){
  stats();
 }
 
-function restoreFromText(text){
+async function restoreFromText(text){
  if(!text||!text.trim())throw Error("JSONが空です");
 
- if(text.length>5*1024*1024){
-  throw Error("JSONが大きすぎます（5MB以内にしてください）");
+ if(text.length>50*1024*1024){
+  throw Error("JSONが大きすぎます（50MB以内にしてください）");
  }
 
  const obj=JSON.parse(text);
@@ -2215,7 +2292,7 @@ function restoreFromText(text){
   return false;
  }
 
- applyBackupObject(obj);
+ await applyBackupObject(obj);
  return true;
 }
 
@@ -2225,8 +2302,8 @@ $("importFile").onchange=async e=>{
  if(!f)return;
 
  try{
-  if(f.size>5*1024*1024){
-   throw Error("JSONが大きすぎます（5MB以内にしてください）");
+  if(f.size>50*1024*1024){
+   throw Error("JSONが大きすぎます（50MB以内にしてください）");
   }
 
   const text=await f.text();
@@ -2257,8 +2334,8 @@ $("validateRestore").onclick=()=>{
 
   if(!text.trim())throw Error("JSONが空です");
 
-  if(text.length>5*1024*1024){
-   throw Error("JSONが大きすぎます（5MB以内にしてください）");
+  if(text.length>50*1024*1024){
+   throw Error("JSONが大きすぎます（50MB以内にしてください）");
   }
 
   const obj=JSON.parse(text);
@@ -2272,9 +2349,9 @@ $("validateRestore").onclick=()=>{
  }
 };
 
-$("applyRestore").onclick=()=>{
+$("applyRestore").onclick=async()=>{
  try{
-  if(restoreFromText($("restoreJson").value)){
+  if(await restoreFromText($("restoreJson").value)){
    $("pasteRestoreWrap").classList.remove("show");
    $("settingsWrap").classList.remove("show");
    toast("バックアップを復元しました");
@@ -2301,21 +2378,19 @@ $("aboutBtn").onclick=()=>$("aboutWrap").classList.add("show");
 $("closeAbout").onclick=()=>$("aboutWrap").classList.remove("show");
 $("aboutWrap").onclick=e=>{if(e.target===$("aboutWrap"))$("aboutWrap").classList.remove("show");};
 
-$("resetBtn").onclick=()=>{
+$("resetBtn").onclick=async()=>{
  if(!confirm("探索記録・ピン・距離・ランドマーク・歩行軌跡をすべて削除します。バックアップはありますか？"))return;
 
  if(!confirm("本当に初期化しますか？この操作は取り消せません。"))return;
 
  // 進行中の取得・自動再試行を無効化し、初期化前の処理が新データへ干渉しないようにする
  landmarkRequestGeneration++;
- if(landmarkRetryTimer){clearTimeout(landmarkRetryTimer);landmarkRetryTimer=null;}
- landmarkRetryCount=0;hasLandmarkFetchSucceeded=false;hasLandmarkFetchAttempted=false;
+ hasLandmarkFetchAttempted=false;
  activeLandmarkRequests.forEach(controller=>controller.abort());
- activeLandmarkRequests.clear();fetchingCells.clear();lastLandmarkFetch=0;
- setLandmarkFetchStatus("idle","ランドマーク：初期化しました","GPS位置が確定すると初回取得を開始します");
+ activeLandmarkRequests.clear();fetchingCells.clear();lastLandmarkFetch=0;landmarkThrottleNoticeShown=false;
  data=fresh();
 
- persist();
+ await persistNow();
  scheduleFogDraw();
  renderPins();
  renderLandmarks();
@@ -2337,6 +2412,7 @@ window.addEventListener("resize",resizeCanvas);
    起動
 ========================= */
 
+await initializeStorage();
 normalizeLandmarks();
 initMap();
 setMapInteractionEnabled(false);
@@ -2360,17 +2436,6 @@ if(data.lastPosition){
 
 })();
 
-setInterval(()=>{
- const panel=$("landmarkFetchStatus");
- if(!panel||panel.dataset.state!=="warning"||!landmarkStatusUntil)return;
- const remaining=Math.ceil((landmarkStatusUntil-Date.now())/1000);
- if(remaining>0){
-  $("landmarkFetchDetail").textContent="次の通常取得まで約"+remaining+"秒です";
- }else{
-  landmarkStatusUntil=0;
-  setLandmarkFetchStatus("idle","ランドマーク取得可能","GPS位置が更新されると取得を試みます");
- }
-},1000);
 
 </script>
 </body>
