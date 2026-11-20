@@ -255,6 +255,8 @@ textarea{min-height:85px;resize:vertical}
     <option value="その他">その他</option>
    </select>
   </div>
+  <div class="field"><label for="landmarkSearch">名前・タグ検索</label><input id="landmarkSearch" type="search" placeholder="例：bar、カフェ、〇〇神社"><p class="subtle">発見済みの名前や、取得済みランドマークのタグも検索できます。</p></div>
+  <div class="field"><label for="landmarkNearbyFilter">距離</label><select id="landmarkNearbyFilter"><option value="all">距離を指定しない</option><option value="100">現在地から100m以内</option><option value="250">現在地から250m以内</option><option value="500">現在地から500m以内</option><option value="1000">現在地から1km以内</option></select></div>
   <div id="landmarkList"></div>
   <div class="modalactions"><button class="action" id="closeLandmarks">閉じる</button></div>
  </div>
@@ -433,7 +435,7 @@ let map,watchId=null,gpsActive=false,currentMarker=null,
  selectedType="surprise",landmarkLayer=L.layerGroup(),
  pinLayer=L.layerGroup(),trackLayer=L.layerGroup(),
  trackRenderer=null,viewMode="explore",
- fetchingCells=new Set(),lastLandmarkFetch=0,
+ fetchingCells=new Set(),lastLandmarkFetch=0,activeLandmarkRequests=new Set(),
  fogFrame=null,layerFrame=null,pinPlacementMode=false;
 
 const $=id=>document.getElementById(id);
@@ -531,9 +533,11 @@ function initMap(){
  // 探索マスクをmapPane内に配置して地図移動分を補正する
  map.getPane("mapPane").appendChild(canvas);
 
- // ランドマーク専用ペイン
+ // ランドマーク・現在地専用ペイン（現在地は霧より前面）
  map.createPane("landmarkPane");
  map.getPane("landmarkPane").style.zIndex="650";
+ map.createPane("currentPositionPane");
+ map.getPane("currentPositionPane").style.zIndex="750";
 
  // タイルの先読みを抑えてメモリ使用量を軽減
  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
@@ -636,7 +640,7 @@ function drawFog(){
 
  // パンくずマーカーの位置だけ霧を晴らす
  const visibleBounds=map.getBounds().pad(.1);
- const revealRadius=Number(data.radius)||10;
+ const baseRevealRadius=Number(data.radius)||10;
 
  ctx.globalCompositeOperation="destination-out";
 
@@ -648,7 +652,9 @@ function drawFog(){
 
   let pt=map.latLngToContainerPoint([revealLat,revealLng]);
   let mpp=40075016.686*Math.cos(revealLat*Math.PI/180)/(256*Math.pow(2,map.getZoom()));
-  let rad=Math.max(2,revealRadius/mpp);
+  const visits=p.count||1;
+  const radiusScale=visits>=16?2.5:visits>=8?2:visits>=4?1.6:visits>=2?1.25:1;
+  let rad=Math.max(2,(baseRevealRadius*radiusScale)/mpp);
 
   let grad=ctx.createRadialGradient(pt.x,pt.y,rad*.78,pt.x,pt.y,rad);
   grad.addColorStop(0,"rgba(0,0,0,1)");
@@ -895,6 +901,7 @@ function gpsPosition(pos){
 
  if(!currentMarker){
   currentMarker=L.circleMarker(ll,{
+   pane:"currentPositionPane",
    radius:7,
    color:"#f3e4c7",
    weight:3,
@@ -993,14 +1000,15 @@ function startGPS(){
     const m={
      1:"位置情報の許可が必要です",
      2:"現在地を取得できません",
-     3:"GPSがタイムアウトしました"
+     3:"GPSがタイムアウトしました。測位を継続して再取得します"
     };
 
     toast(m[e.code]||"位置情報エラー");
 
     if(e.code===1)stopGPS();
+    else if(e.code===3)$("gpsStatus").textContent="GPS再取得待ち";
    },
-   {enableHighAccuracy:true,maximumAge:3000,timeout:20000}
+   {enableHighAccuracy:true,maximumAge:10000,timeout:60000}
   );
  }catch(e){
   watchId=null;
@@ -1184,7 +1192,7 @@ function getLandmarkCoords(el){
 
 function osmQuery(lat,lng){
  return `
-[out:json][timeout:20];
+[out:json][timeout:35];
 (
  node(around:${LANDMARK_RADIUS},${lat},${lng})["name"]["tourism"];
  way(around:${LANDMARK_RADIUS},${lat},${lng})["name"]["tourism"];
@@ -1205,10 +1213,25 @@ out center tags;
 `;
 }
 
-// 約120m四方のセル単位で取得済み範囲を管理
-// 250mの取得半径に対してセルを細かくし、移動時の取りこぼしを防ぐ
+// パンくずの霧解除範囲内か判定（通過回数に応じて範囲を拡大）
+function getBreadcrumbRevealRadius(p){
+ const visits=p.count||1;
+ const scale=visits>=16?2.5:visits>=8?2:visits>=4?1.6:visits>=2?1.25:1;
+ return (Number(data.radius)||10)*scale;
+}
+function isInsideRevealedArea(lat,lng){
+ return data.breadcrumbs.some(p=>{
+  const pLat=p.correctedLat!=null?p.correctedLat:p.lat;
+  const pLng=p.correctedLng!=null?p.correctedLng:p.lng;
+  return dist({lat,lng},{lat:pLat,lng:pLng})<=getBreadcrumbRevealRadius(p);
+ });
+}
+
+// 約55m四方のセル単位＋パンくず件数で取得済み範囲を管理
+// 新しいパンくずが増えた場合、同じセルでも再取得する
 function cellKey(lat,lng){
- return `v2:${Math.floor(lat*900)},${Math.floor(lng*900)}`;
+ // 約55m四方のセル＋パンくず件数。新しい霧解除地点が増えたら同じセルも再取得
+ return `v3:${Math.floor(lat*1800)},${Math.floor(lng*1800)}:${data.breadcrumbs.length}`;
 }
 
 // 現在地から取得範囲外になった未発見ランドマークを整理する
@@ -1223,7 +1246,7 @@ function pruneLandmarksOutsideRange(lat,lng,accuracy){
  data.landmarks=data.landmarks.filter(lm=>{
   const discovered=lm.discovered||discoveredIds.has(lm.id);
   if(discovered)return true;
-  return dist(origin,{lat:lm.lat,lng:lm.lng})<=LANDMARK_RADIUS;
+  return dist(origin,{lat:lm.lat,lng:lm.lng})<=LANDMARK_RADIUS||isInsideRevealedArea(lm.lat,lm.lng);
  });
 
  // お気に入りも、候補から除外された未発見ランドマーク分だけ整理する
@@ -1232,10 +1255,10 @@ function pruneLandmarksOutsideRange(lat,lng,accuracy){
 
  // 古い取得済みセルを整理し、再訪時には再取得できるようにする
  data.landmarkCells=data.landmarkCells.filter(key=>{
-  const match=/^v2:(-?\d+),(-?\d+)$/.exec(key);
+  const match=/^v3:(-?\d+),(-?\d+):\d+$/.exec(key);
   if(!match)return false;
-  const cellLat=(Number(match[1])+.5)/900;
-  const cellLng=(Number(match[2])+.5)/900;
+  const cellLat=(Number(match[1])+.5)/1800;
+  const cellLng=(Number(match[2])+.5)/1800;
   return dist(origin,{lat:cellLat,lng:cellLng})<=LANDMARK_RADIUS*2;
  });
 
@@ -1246,63 +1269,92 @@ function pruneLandmarksOutsideRange(lat,lng,accuracy){
 }
 
 async function fetchNearbyLandmarks(lat,lng,force=false){
- let key=cellKey(lat,lng);
-
- if(!force&&data.landmarkCells.includes(key))return;
- if(fetchingCells.has(key))return;
- if(!force&&Date.now()-lastLandmarkFetch<8000)return;
+ const key=cellKey(lat,lng);
+ if(!force&&data.landmarkCells.includes(key))return false;
+ if(fetchingCells.has(key))return false;
+ if(!force&&Date.now()-lastLandmarkFetch<8000)return false;
 
  fetchingCells.add(key);
  lastLandmarkFetch=Date.now();
+ const controller=new AbortController();
+ activeLandmarkRequests.add(controller);
+ const endpoints=[
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.private.coffee/api/interpreter"
+ ];
+ const retryDelays=[3000,8000];
 
  try{
   const query=osmQuery(lat,lng);
-  const endpoint="https://overpass-api.de/api/interpreter";
+  let json=null,lastError=null;
 
-  const res=await fetch(endpoint,{
-   method:"POST",
-   body:query,
-   headers:{"Content-Type":"text/plain;charset=UTF-8"}
-  });
+  // 3つのOverpassサーバーを順番に試し、失敗時は待って次のサーバーへ再試行
+  for(let attempt=0;attempt<endpoints.length;attempt++){
+   if(controller.signal.aborted)throw Object.assign(new Error("取得がキャンセルされました"),{name:"AbortError"});
 
-  if(!res.ok)throw Error("Overpass API error");
+   const endpoint=endpoints[attempt];
+   const requestController=new AbortController();
+   const abortRequest=()=>requestController.abort();
+   controller.signal.addEventListener("abort",abortRequest,{once:true});
+   const timeoutId=setTimeout(()=>requestController.abort(),40000);
 
-  const json=await res.json();
+   try{
+    const response=await fetch(endpoint,{
+     method:"POST",
+     body:query,
+     headers:{"Content-Type":"text/plain;charset=UTF-8"},
+     signal:requestController.signal
+    });
+    if(!response.ok)throw Error(`HTTP ${response.status}`);
+    json=await response.json();
+    break;
+   }catch(error){
+    if(controller.signal.aborted)throw Object.assign(new Error("取得がキャンセルされました"),{name:"AbortError"});
+    lastError=error;
+    console.warn(`ランドマーク取得失敗（${attempt+1}/${endpoints.length}）: ${endpoint}`,error);
+   }finally{
+    clearTimeout(timeoutId);
+    controller.signal.removeEventListener("abort",abortRequest);
+   }
 
+   if(attempt<retryDelays.length){
+    await new Promise((resolve,reject)=>{
+     const timer=setTimeout(done,retryDelays[attempt]);
+     function done(){controller.signal.removeEventListener("abort",cancel);resolve();}
+     function cancel(){clearTimeout(timer);reject(Object.assign(new Error("取得がキャンセルされました"),{name:"AbortError"}));}
+     controller.signal.addEventListener("abort",cancel,{once:true});
+    });
+   }
+  }
+
+  if(!json)throw lastError||Error("Overpass API unavailable");
+
+  let added=0;
   for(const el of json.elements||[]){
    const coords=getLandmarkCoords(el);
    if(!coords||!el.tags?.name)continue;
-
+   if(!isInsideRevealedArea(coords.lat,coords.lng))continue;
    const id=`${el.type}_${el.id}`;
    if(data.landmarks.some(x=>x.id===id))continue;
-
-   data.landmarks.push({
-    id,
-    name:el.tags.name,
-    lat:coords.lat,
-    lng:coords.lng,
-    tags:el.tags||{},
-    category:landmarkCategory(el.tags),
-    categoryGroup:getLandmarkCategoryGroup(el.tags||{}),
-    icon:landmarkIcon(el.tags),
-    discovered:false,
-    fetchedAt:Date.now()
-   });
+   data.landmarks.push({id,name:el.tags.name,lat:coords.lat,lng:coords.lng,tags:el.tags||{},category:landmarkCategory(el.tags),categoryGroup:getLandmarkCategoryGroup(el.tags||{}),icon:landmarkIcon(el.tags),discovered:false,fetchedAt:Date.now()});
+   added++;
   }
 
   if(!data.landmarkCells.includes(key))data.landmarkCells.push(key);
-
-  // 取得中にGPSが進んでいる場合も、最新の現在地を基準に候補を整理する
   const current=data.lastPosition||{lat,lng};
   pruneLandmarksOutsideRange(current.lat,current.lng,current.accuracy);
   persist();
   renderLandmarks();
-  checkLandmarkDiscovery(current.lat,current.lng);
+  checkLandmarkDiscovery(current.lat,current.lng,current.accuracy);
+  if(added)console.info(`ランドマーク取得：${added}件追加`);
+  return true;
  }catch(e){
-  console.warn("ランドマーク取得失敗",e);
-  toast("ランドマーク情報を取得できませんでした。通信環境を確認してください");
+  console.warn("ランドマーク取得失敗（全サーバー試行後）",e);
+  return false;
  }finally{
   fetchingCells.delete(key);
+  activeLandmarkRequests.delete(controller);
  }
 }
 
@@ -1317,7 +1369,7 @@ function checkLandmarkDiscovery(lat,lng,accuracy){
 
   const d=dist({lat,lng},{lat:lm.lat,lng:lm.lng});
 
-  if(d<=25){
+  if(d<=25&&isInsideRevealedArea(lm.lat,lm.lng)){
    lm.discovered=true;
    lm.discoveredAt=lm.discoveredAt||new Date().toISOString();
 
@@ -1384,15 +1436,19 @@ function renderLandmarks(){
   const description=lm.description||"地図データに詳しい説明は登録されていません。";
   const discoveryDate=data.landmarkDiscoveryDates[lm.id];
   const dateStr=discoveryDate?`<div class="small">発見日：${new Date(discoveryDate).toLocaleDateString("ja-JP")}</div>`:"";
-  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.categoryGroup||lm.category||"その他の施設")}</div>${found?dateStr:""}<div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}</div>`);
+  marker.bindPopup(`<div class="pinpopup"><b>${found?esc(lm.name):"✦ 未発見のランドマーク"}</b><div class="small">${esc(lm.categoryGroup||lm.category||"その他の施設")}</div>${found?dateStr:""}<div class="small">${esc(description)}</div>${!found?'<div class="small">近づくと発見できます</div>':""}<div style="margin-top:7px"><button type="button" onclick="window.walkLandmarkFavorite('${esc(lm.id)}')">${isFav?"★ お気に入り解除":"☆ お気に入り"}</button><button type="button" onclick="window.walkLandmarkGoogleMap(${lm.lat},${lm.lng})">Google Maps</button></div></div>`);
  });
 }
+
+window.walkLandmarkFavorite=id=>toggleFavorite(id);
+window.walkLandmarkGoogleMap=(lat,lng)=>window.open(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`,"_blank");
 
 function toggleFavorite(id){
  const idx=data.favoriteLandmarks.indexOf(id);
  if(idx>=0){data.favoriteLandmarks.splice(idx,1);toast("お気に入りを解除しました");}
  else{data.favoriteLandmarks.push(id);toast("お気に入りに追加しました");beep("pin");}
  persist();
+ renderLandmarks();
  renderLandmarkBook();
 }
 
@@ -1417,6 +1473,16 @@ function renderLandmarkBook(){
  if(filter==="unknown")items=items.filter(x=>!x.discovered);
  if(filter==="favorite")items=items.filter(x=>data.favoriteLandmarks.includes(x.id));
  if(catFilter&&catFilter!=="all")items=items.filter(x=>x.categoryGroup===catFilter);
+ const searchText=($("landmarkSearch")?.value||"").trim().toLocaleLowerCase();
+ if(searchText)items=items.filter(x=>{
+  const tagText=Object.entries(x.tags||{}).map(([k,v])=>`${k} ${v}`).join(" ");
+  return `${x.name} ${x.category||""} ${x.categoryGroup||""} ${tagText}`.toLocaleLowerCase().includes(searchText);
+ });
+ const nearbyLimit=$("landmarkNearbyFilter")?.value||"all";
+ if(nearbyLimit!=="all"){
+  if(!data.lastPosition)items=[];
+  else items=items.filter(x=>dist(data.lastPosition,{lat:x.lat,lng:x.lng})<=Number(nearbyLimit));
+ }
 
  // ソート：お気に入り > 発見済み > 名前順
  items.sort((a,b)=>{
@@ -1775,6 +1841,8 @@ $("landmarkWrap").onclick=e=>{
 
 $("landmarkFilter").onchange=renderLandmarkBook;
 $("landmarkCategoryFilter").onchange=renderLandmarkBook;
+$("landmarkSearch").oninput=renderLandmarkBook;
+$("landmarkNearbyFilter").onchange=renderLandmarkBook;
 
 $("discoveryClose").onclick=()=>{
  $("discoveryWrap").classList.remove("show");
@@ -1787,8 +1855,10 @@ $("refreshLandmarks").onclick=async()=>{
  }
 
  let ll=currentMarker.getLatLng();
- await fetchNearbyLandmarks(ll.lat,ll.lng,true);
- toast("周辺ランドマークの取得を試みました");
+ toast("周辺ランドマークを再取得しています…");
+ const success=await fetchNearbyLandmarks(ll.lat,ll.lng,true);
+ if(success)toast("周辺ランドマークの取得が完了しました");
+ else toast("取得できませんでした。通信回復後、GPS更新時に再試行します");
 };
 
 /* =========================
@@ -2162,6 +2232,9 @@ $("resetBtn").onclick=()=>{
 
  if(!confirm("本当に初期化しますか？この操作は取り消せません。"))return;
 
+ // 進行中の取得を中断し、初期化前の取得制限をリセット
+ activeLandmarkRequests.forEach(controller=>controller.abort());
+ activeLandmarkRequests.clear();fetchingCells.clear();lastLandmarkFetch=0;
  data=fresh();
 
  persist();
@@ -2198,6 +2271,7 @@ renderBreadcrumbs();
 
 if(data.lastPosition){
  L.circleMarker([data.lastPosition.lat,data.lastPosition.lng],{
+  pane:"currentPositionPane",
   radius:5,
   color:"#f3e4c7",
   weight:2,
